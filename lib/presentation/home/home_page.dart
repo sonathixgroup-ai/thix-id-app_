@@ -21,11 +21,11 @@ class PremiumColors {
   static const Color primaryDark = Color(0xFF071B8C);
   static const Color primaryElectric = Color(0xFF2E5BFF);
   static const Color white = Color(0xFFFFFFFF);
-  static const Color backgroundLight = Color(0xFFF6F8FC);
-  static const Color mintLight = Color(0xFFCFF7E8);
-  static const Color lavenderLight = Color(0xFFEEE7FF);
-  static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6C6C7A);
+  static const Color backgroundLight = Color(0xFFF8FAFC);
+  static const Color mintLight = Color(0xFFD1FAE5);
+  static const Color lavenderLight = Color(0xFFF3E8FF);
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
 }
 
 class HomePage extends StatefulWidget {
@@ -159,7 +159,7 @@ class _HomePageState extends State<HomePage> {
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                // ========== HEADER TRÈS COMPACT ==========
+                // ========== HEADER ==========
                 Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
@@ -169,8 +169,8 @@ class _HomePageState extends State<HomePage> {
                       colors: [PremiumColors.primaryDark, PremiumColors.primaryElectric],
                     ),
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
                     ),
                   ),
                   child: Stack(
@@ -178,10 +178,10 @@ class _HomePageState extends State<HomePage> {
                       Positioned(
                         right: -10,
                         bottom: 10,
-                        child: Icon(Icons.fingerprint, size: 80, color: Colors.white.withOpacity(0.06)),
+                        child: Icon(Icons.fingerprint, size: 90, color: Colors.white.withOpacity(0.06)),
                       ),
                       Padding(
-                        padding: EdgeInsets.only(top: safeTop + 10, left: 20, right: 20, bottom: 16),
+                        padding: EdgeInsets.only(top: safeTop + 12, left: 20, right: 20, bottom: 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -193,28 +193,20 @@ class _HomePageState extends State<HomePage> {
                                   children: [
                                     const Text(
                                       'THIX ID',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                        letterSpacing: -0.5,
-                                      ),
+                                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       'Identité Sécurisée. Avenir de Confiance.',
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        color: Colors.white.withOpacity(0.8),
-                                      ),
+                                      style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.8)),
                                     ),
                                   ],
                                 ),
                                 GestureDetector(
                                   onTap: _onProfileTap,
                                   child: Container(
-                                    width: 36,
-                                    height: 36,
+                                    width: 38,
+                                    height: 38,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: Colors.white.withOpacity(0.15),
@@ -225,39 +217,26 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 20),
                             const Text(
                               'Bienvenue !',
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
-                              ),
+                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.5),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
                             Text(
                               'Que voulez-vous faire aujourd’hui ?',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white.withOpacity(0.9),
-                              ),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white.withOpacity(0.9)),
                             ),
-                            const SizedBox(height: 14),
-                            // Barre de recherche compacte
+                            const SizedBox(height: 16),
+                            // Barre recherche
                             Container(
-                              height: 46,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(26),
                                 boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
+                                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4)),
                                 ],
                               ),
                               child: Row(
@@ -279,12 +258,12 @@ class _HomePageState extends State<HomePage> {
                                   GestureDetector(
                                     onTap: _searching ? null : _handleSearch,
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                                       decoration: BoxDecoration(
                                         gradient: const LinearGradient(
                                           colors: [PremiumColors.primaryElectric, PremiumColors.primaryDark],
                                         ),
-                                        borderRadius: BorderRadius.circular(22),
+                                        borderRadius: BorderRadius.circular(24),
                                       ),
                                       child: const Text(
                                         'Vérifier',
@@ -301,37 +280,43 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                // ========== BANDES NFC / QR (style bande horizontale) ==========
+                const SizedBox(height: 20),
+
+                // ========== QR CODE & NFC CÔTE À CÔTE ==========
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
+                  child: Row(
                     children: [
-                      _CompactActionBar(
-                        icon: Icons.qr_code_scanner_rounded,
-                        title: 'Scanner un QR',
-                        subtitle: 'Scannez un code en toute sécurité',
-                        bgColor: PremiumColors.mintLight,
-                        iconColor: PremiumColors.primaryDark,
-                        onTap: () => ThixIdentitySheets.showQrScanSheet(context),
+                      Expanded(
+                        child: _PremiumActionCard(
+                          icon: Icons.qr_code_scanner_rounded,
+                          title: 'Scanner un QR',
+                          subtitle: 'Scannez un code sécurisé',
+                          bgColor: PremiumColors.mintLight,
+                          iconColor: const Color(0xFF059669),
+                          onTap: () => ThixIdentitySheets.showQrScanSheet(context),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      _CompactActionBar(
-                        icon: Icons.nfc_rounded,
-                        title: 'Lire via NFC',
-                        subtitle: 'Approchez votre appareil',
-                        bgColor: PremiumColors.lavenderLight,
-                        iconColor: PremiumColors.primaryDark,
-                        onTap: () => ThixIdentitySheets.showNfcScanSheet(context),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: _PremiumActionCard(
+                          icon: Icons.nfc_rounded,
+                          title: 'Lire via NFC',
+                          subtitle: 'Approchez votre appareil',
+                          bgColor: PremiumColors.lavenderLight,
+                          iconColor: const Color(0xFF7C3AED),
+                          onTap: () => ThixIdentitySheets.showNfcScanSheet(context),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                // ========== NOTIFICATIONS (version compacte) ==========
+                const SizedBox(height: 20),
+
+                // ========== NOTIFICATIONS ==========
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _CompactNotificationsCard(
+                  child: _NotificationsCard(
                     isAuthenticated: auth.isAuthenticated,
                     notifications: _notifications.streamForHome(uid: auth.currentUser?.id),
                     onSeeMore: () {
@@ -360,8 +345,9 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                const SizedBox(height: 16),
-                // ========== NOS SERVICES (GRILLE 2x4 ULTRA COMPACTE) ==========
+                const SizedBox(height: 20),
+
+                // ========== NOS SERVICES (GRILLE 2x4 PARFAITEMENT ALIGNÉE) ==========
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
@@ -372,16 +358,16 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const Text(
                             'Nos services',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: PremiumColors.textPrimary),
                           ),
                           TextButton(
                             onPressed: () {},
                             style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
-                            child: const Text('Tout voir >', style: TextStyle(fontSize: 12)),
+                            child: const Text('Tout voir >', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
                       StreamBuilder<SectionBadgeCounts>(
                         stream: badgeStream,
                         builder: (context, snap) {
@@ -390,54 +376,55 @@ class _HomePageState extends State<HomePage> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 2,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 0.85,
+                            mainAxisSpacing: 14,
+                            crossAxisSpacing: 14,
+                            childAspectRatio: 0.95,
                             children: [
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Demander un Compte',
                                 icon: Icons.person_add_alt_1,
-                                gradient: [PremiumColors.primaryElectric, PremiumColors.primaryDark],
+                                gradient: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                                 iconColor: Colors.white,
                                 onTap: _handleRequestAccount,
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Mon Compte',
                                 icon: Icons.account_circle,
-                                gradient: [PremiumColors.mintLight, Colors.white],
+                                gradient: const [Color(0xFF10B981), Color(0xFF059669)],
+                                iconColor: Colors.white,
                                 onTap: _onProfileTap,
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Formations',
                                 icon: Icons.school_rounded,
                                 badge: counts.formations,
                                 onTap: () => context.push(AppRoutes.trainingHome),
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Emplois',
                                 icon: Icons.work_rounded,
                                 badge: counts.jobs,
                                 onTap: () => context.push(AppRoutes.jobs),
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'THIX INFO',
                                 icon: Icons.newspaper_rounded,
                                 badge: counts.info,
                                 onTap: () => AlertInfoSheet.show(context),
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Opportunités',
                                 icon: Icons.lightbulb_rounded,
                                 badge: counts.opportunities,
                                 onTap: () => context.push(AppRoutes.opportunities),
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Événements',
                                 icon: Icons.event_rounded,
                                 badge: counts.events,
                                 onTap: () => context.push(AppRoutes.events),
                               ),
-                              _CompactServiceCard(
+                              _ServiceCard(
                                 title: 'Réseau Pro',
                                 icon: Icons.groups_rounded,
                                 onTap: () => context.push(AppRoutes.network),
@@ -449,21 +436,22 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                // ========== MISSION (compact) ==========
+                const SizedBox(height: 24),
+
+                // ========== MISSION ==========
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [PremiumColors.primaryDark, PremiumColors.primaryElectric],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 6)),
                       ],
                     ),
                     child: Row(
@@ -475,39 +463,39 @@ class _HomePageState extends State<HomePage> {
                               Text(
                                 'NOTRE MISSION',
                                 style: TextStyle(
-                                  fontSize: 10,
-                                  letterSpacing: 1,
+                                  fontSize: 11,
+                                  letterSpacing: 1.2,
                                   color: Colors.white.withOpacity(0.8),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               const Text(
                                 'Construisons ensemble l’avenir de la jeunesse.',
-                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text(
                                 'Accédez à des opportunités, des ressources et un réseau engagé.',
-                                style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.9)),
+                                style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.9)),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          width: 50,
-                          height: 50,
+                          width: 56,
+                          height: 56,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withOpacity(0.12),
                           ),
-                          child: const Icon(Icons.diversity_3_rounded, size: 28, color: Colors.white),
+                          child: const Icon(Icons.diversity_3_rounded, size: 30, color: Colors.white),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 80),
+                const SizedBox(height: 90),
               ],
             ),
           ),
@@ -520,19 +508,19 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-      // ========== BOTTOM NAVIGATION COMPACTE ==========
+      // ========== BOTTOM NAVIGATION ==========
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -549,45 +537,47 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ========== BANDE HORIZONTALE POUR NFC/QR ==========
-class _CompactActionBar extends StatelessWidget {
+// ========== CARTE PREMIUM POUR QR / NFC ==========
+class _PremiumActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color bgColor;
   final Color iconColor;
   final VoidCallback onTap;
-  const _CompactActionBar({required this.icon, required this.title, required this.subtitle, required this.bgColor, required this.iconColor, required this.onTap});
+  const _PremiumActionCard({required this.icon, required this.title, required this.subtitle, required this.bgColor, required this.iconColor, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 12, offset: const Offset(0, 6)),
+          ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, size: 18, color: iconColor),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(14)),
+                  child: Icon(icon, size: 22, color: iconColor),
+                ),
+                Icon(Icons.arrow_forward_rounded, size: 16, color: PremiumColors.textSecondary),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                  Text(subtitle, style: const TextStyle(fontSize: 10, color: PremiumColors.textSecondary)),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 12, color: PremiumColors.textSecondary),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: PremiumColors.textPrimary)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: PremiumColors.textSecondary)),
           ],
         ),
       ),
@@ -595,26 +585,28 @@ class _CompactActionBar extends StatelessWidget {
   }
 }
 
-// ========== CARTE SERVICE COMPACTE ==========
-class _CompactServiceCard extends StatelessWidget {
+// ========== CARTE SERVICE 2x4 ALIGNÉE ==========
+class _ServiceCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final int badge;
   final List<Color> gradient;
   final Color? iconColor;
   final VoidCallback onTap;
-  const _CompactServiceCard({required this.title, required this.icon, this.badge = 0, this.gradient = const [Colors.white, Colors.white], this.iconColor, required this.onTap});
+  const _ServiceCard({required this.title, required this.icon, this.badge = 0, this.gradient = const [Colors.white, Colors.white], this.iconColor, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -623,25 +615,33 @@ class _CompactServiceCard extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(gradient: LinearGradient(colors: gradient), borderRadius: BorderRadius.circular(14)),
-                  child: Icon(icon, size: 22, color: iconColor ?? PremiumColors.primaryElectric),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(gradient: LinearGradient(colors: gradient), borderRadius: BorderRadius.circular(16)),
+                  child: Icon(icon, size: 26, color: iconColor ?? PremiumColors.primaryElectric),
                 ),
                 if (badge > 0)
                   Positioned(
                     right: -4,
                     top: -4,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: const EdgeInsets.all(3),
                       decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
-                      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                      child: Text('$badge', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        badge > 99 ? '99+' : '$badge',
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11)),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: PremiumColors.textPrimary),
+            ),
           ],
         ),
       ),
@@ -649,70 +649,79 @@ class _CompactServiceCard extends StatelessWidget {
   }
 }
 
-// ========== NOTIFICATIONS COMPACTES ==========
-class _CompactNotificationsCard extends StatelessWidget {
+// ========== NOTIFICATIONS CARD ==========
+class _NotificationsCard extends StatelessWidget {
   final bool isAuthenticated;
   final Stream<List<Map<String, dynamic>>>? notifications;
   final VoidCallback onSeeMore;
   final void Function(String) onMarkRead;
   final void Function(Map<String, dynamic>) onOpen;
-  const _CompactNotificationsCard({required this.isAuthenticated, required this.notifications, required this.onSeeMore, required this.onMarkRead, required this.onOpen});
+  const _NotificationsCard({required this.isAuthenticated, required this.notifications, required this.onSeeMore, required this.onMarkRead, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
-            child: const Icon(Icons.notifications_rounded, color: Color(0xFF3B82F6), size: 18),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
+                child: const Icon(Icons.notifications_rounded, color: Color(0xFF3B82F6), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+              TextButton(onPressed: onSeeMore, style: TextButton.styleFrom(padding: EdgeInsets.zero), child: const Text('Voir tout >', style: TextStyle(fontSize: 12))),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: !isAuthenticated
-                ? const Text('Connectez-vous pour voir vos notifications.', style: TextStyle(fontSize: 12, color: PremiumColors.textSecondary))
-                : StreamBuilder<List<Map<String, dynamic>>>(
-                    stream: notifications,
-                    builder: (context, snap) {
-                      final rows = snap.data ?? [];
-                      if (rows.isEmpty) {
-                        return const Text('Aucune notification', style: TextStyle(fontSize: 12, color: PremiumColors.textSecondary, fontWeight: FontWeight.w500));
-                      }
-                      final first = rows.first;
-                      final title = (first['title'] ?? '') as String;
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const SizedBox(height: 12),
+          if (!isAuthenticated)
+            const Text('Connectez-vous pour voir vos notifications.', style: TextStyle(fontSize: 13, color: PremiumColors.textSecondary))
+          else
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: notifications,
+              builder: (context, snap) {
+                final rows = snap.data ?? [];
+                if (rows.isEmpty) {
+                  return const Text('Aucune notification récente.', style: TextStyle(fontSize: 13, color: PremiumColors.textSecondary));
+                }
+                final first = rows.first;
+                final title = (first['title'] ?? '') as String;
+                final body = (first['body'] ?? '') as String;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Notifications', style: TextStyle(fontSize: 10, color: PremiumColors.textSecondary)),
-                                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              final id = (first['id'] ?? '').toString();
-                              onMarkRead(id);
-                              onOpen(first);
-                            },
-                            child: const Icon(Icons.chevron_right, size: 16),
-                          ),
+                          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 2),
+                          Text(body, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: PremiumColors.textSecondary)),
                         ],
-                      );
-                    },
-                  ),
-          ),
-          TextButton(onPressed: onSeeMore, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)), child: const Text('Voir tout >', style: TextStyle(fontSize: 11))),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        final id = (first['id'] ?? '').toString();
+                        onMarkRead(id);
+                        onOpen(first);
+                      },
+                      child: const Icon(Icons.chevron_right, size: 18, color: PremiumColors.textSecondary),
+                    ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );
@@ -733,9 +742,9 @@ class _NavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 22, color: selected ? PremiumColors.primaryElectric : PremiumColors.textSecondary),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? PremiumColors.primaryElectric : PremiumColors.textSecondary)),
+          Icon(icon, size: 24, color: selected ? PremiumColors.primaryElectric : PremiumColors.textSecondary),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? PremiumColors.primaryElectric : PremiumColors.textSecondary)),
         ],
       ),
     );
@@ -810,8 +819,8 @@ class _AccountChoiceTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
               child: Icon(icon, color: PremiumColors.primaryElectric, size: 22),
             ),
             const SizedBox(width: 14),
