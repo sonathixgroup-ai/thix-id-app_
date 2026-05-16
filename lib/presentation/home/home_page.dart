@@ -1,255 +1,41 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
 import 'package:thix_id/auth/auth_controller.dart';
 import 'package:thix_id/models/app_user.dart';
+import 'package:thix_id/nav.dart';
+
 import 'package:thix_id/presentation/common/full_screen_message.dart';
 import 'package:thix_id/presentation/common/alert_info_sheet.dart';
-import 'package:thix_id/presentation/emergency/emergency_fab.dart';
 import 'package:thix_id/presentation/common/notifications_sheet.dart';
 import 'package:thix_id/presentation/common/thix_identity_sheets.dart';
+
 import 'package:thix_id/services/firestore_user_service.dart';
-import 'package:thix_id/services/access_request_service.dart';
 import 'package:thix_id/services/notification_service.dart';
+import 'package:thix_id/services/notification_counters_service.dart';
 import 'package:thix_id/services/thix_id_service.dart';
-import '../../theme.dart';
-import '../../nav.dart';
 
-class PremiumGridCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool compact;
-  final bool filled;
-  final String? imageAssetPath;
-  final int badgeCount;
+import 'package:thix_id/l10n/app_localizations.dart';
+import 'package:thix_id/l10n/locale_controller.dart';
 
-  const PremiumGridCard({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.compact = false,
-    this.filled = false,
-    this.imageAssetPath,
-    this.badgeCount = 0,
-  });
+class PremiumColors {
+  static const Color primaryDark = Color(0xFF071B8C);
+  static const Color primaryElectric = Color(0xFF2E5BFF);
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.theme.brightness == Brightness.dark;
-    final goldBorder =
-        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
-            .withValues(alpha: 0.55);
-    final fillGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        LightModeColors.accent,
-        LightModeColors.metalGold,
-        LightModeColors.metalGoldDeep.withValues(alpha: 0.85)
-      ],
-    );
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: LayoutBuilder(
-          builder: (context, c) {
-            final tight = (c.maxHeight.isFinite && c.maxHeight < 92) || compact;
-            final iconSize = tight ? 18.0 : 24.0;
-            final chipSize = tight ? 34.0 : 44.0;
-            final gap = tight ? 6.0 : AppSpacing.sm;
-            final padding = tight ? const EdgeInsets.all(10) : AppSpacing.paddingMd;
-            final cs = context.theme.colorScheme;
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color backgroundLight = Color(0xFFF6F8FC);
 
-            final textStyle = (tight ? context.textStyles.labelSmall : context.textStyles.labelMedium)?.copyWith(
-              color: filled ? const Color(0xFF0A2F5C) : cs.onSurface,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            );
+  static const Color mintLight = Color(0xFFCFF7E8);
+  static const Color lavenderLight = Color(0xFFEEE7FF);
+  static const Color peachLight = Color(0xFFFFE9D6);
 
-            final hasImage = (imageAssetPath ?? '').trim().isNotEmpty;
-
-            return Container(
-              decoration: BoxDecoration(
-                color: filled ? null : cs.surface,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-                ],
-                border: Border.all(color: filled ? Colors.transparent : goldBorder),
-                gradient: filled ? fillGradient : null,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                children: [
-                  if (hasImage && !filled)
-                    Positioned.fill(
-                      child: Image.asset(
-                        imageAssetPath!,
-                        fit: BoxFit.cover,
-                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.10),
-                        colorBlendMode: BlendMode.darken,
-                      ),
-                    ),
-                  if (hasImage && !filled)
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: isDark ? 0.05 : 0.0),
-                              cs.surface.withValues(alpha: isDark ? 0.35 : 0.55),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  Padding(
-                    padding: padding,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: chipSize,
-                          height: chipSize,
-                          decoration: BoxDecoration(
-                            color: (filled ? Colors.white : LightModeColors.accent).withValues(alpha: filled ? 0.35 : 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            icon,
-                            color: filled ? const Color(0xFF0A2F5C) : LightModeColors.accent,
-                            size: iconSize,
-                          ),
-                        ),
-                        SizedBox(height: gap),
-                        Flexible(
-                          child: Text(
-                            label,
-                            style: textStyle,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (badgeCount > 0)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: _NotificationBadge(count: badgeCount),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationBadge extends StatelessWidget {
-  final int count;
-  const _NotificationBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final label = count > 99 ? '99+' : '$count';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: LightModeColors.error,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.surface, width: 2),
-      ),
-      child: Text(
-        label,
-        style: context.textStyles.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w900, height: 1.0),
-      ),
-    );
-  }
-}
-
-class RichGoldAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  const RichGoldAction({
-    super.key,
-    required this.icon,
-    required this.label,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 6,
-                offset: const Offset(0, 4),
-              )
-            ],
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                LightModeColors.accent,
-                LightModeColors.metalGold,
-                LightModeColors.metalGoldDeep
-              ],
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            margin: const EdgeInsets.all(1),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [LightModeColors.accent, LightModeColors.metalGold],
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: const Color(0xFF0A2F5C), size: 18),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  label,
-                  style: context.textStyles.labelLarge?.copyWith(
-                    color: const Color(0xFF0A2F5C),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  static const Color textPrimary = Color(0xFF1A1A2E);
+  static const Color textSecondary = Color(0xFF6C6C7A);
 }
 
 class HomePage extends StatefulWidget {
@@ -260,11 +46,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _searchController = TextEditingController();
-  bool _searching = false;
-  final _notifications = NotificationService();
+  final TextEditingController _searchController =
+      TextEditingController();
 
-  static final RegExp _uidLikeRegex = RegExp(r'^[A-Za-z0-9_\-]{20,}$');
+  bool _searching = false;
+
+  final _notifications = NotificationService();
+  final _counters = NotificationCountersService();
+
+  static final RegExp _uidLikeRegex =
+      RegExp(r'^[A-Za-z0-9_-]{20,}$');
 
   @override
   void dispose() {
@@ -274,36 +65,44 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _handleHomeSearchVerify() async {
     final raw = _searchController.text.trim();
+
     if (raw.isEmpty) {
       await FullScreenMessage.showError(
         context,
         title: 'Identifiant requis',
         message:
-            "Saisissez un THIX ID (ex: ${ThixIdService.exampleV2}) ou un UID, puis appuyez sur 'Vérifier'.",
+            "Saisissez un THIX ID puis appuyez sur Vérifier.",
       );
       return;
     }
 
     final normalized = ThixIdService.normalize(raw);
-    final isThix =
-        normalized.startsWith('THIX-') && ThixIdService.isValid(normalized);
+
+    final isThix = normalized.startsWith('THIX-') &&
+        ThixIdService.isValid(normalized);
+
     final isUid = _uidLikeRegex.hasMatch(raw);
+
     if (!isThix && !isUid) {
       await FullScreenMessage.showError(
         context,
         title: 'Identifiant invalide',
         message:
-            'Format attendu: ${ThixIdService.exampleV2} (recommandé) ou ${ThixIdService.exampleV1} ou UID (identifiant long alphanumérique).',
+            'Format THIX ID incorrect.',
       );
       return;
     }
 
     setState(() => _searching = true);
+
     try {
       final userService = FirestoreUserService();
+
       AppUser? user;
+
       if (isThix) {
-        user = await userService.fetchUserByThixId(normalized);
+        user =
+            await userService.fetchUserByThixId(normalized);
       } else {
         user = await userService.fetchUserByUid(raw);
       }
@@ -315,49 +114,101 @@ class _HomePageState extends State<HomePage> {
           context,
           title: 'Profil introuvable',
           message:
-              "Aucun profil n'a été trouvé pour l'identifiant: ${normalized.toUpperCase()}.",
+              "Aucun profil trouvé.",
         );
         return;
       }
 
       final thix = user.thixId.trim().toUpperCase();
-      if (thix.isNotEmpty && ThixIdService.isValid(thix)) {
-        context.push('${AppRoutes.publicProfile}?thixId=$thix');
+
+      if (thix.isNotEmpty &&
+          ThixIdService.isValid(thix)) {
+        context.push(
+          '${AppRoutes.publicProfile}?thixId=$thix',
+        );
       } else {
-        await ThixIdentitySheets.showVerifySheet(context,
-            initialUidOrThixId: user.id);
+        await ThixIdentitySheets.showVerifySheet(
+          context,
+          initialUidOrThixId: user.id,
+        );
       }
     } catch (e) {
       if (!mounted) return;
+
       await FullScreenMessage.showError(
         context,
-        title: 'Erreur de recherche',
+        title: 'Erreur',
         message:
-            "Impossible d'exécuter la vérification. Réessayez.\n\nDétail: $e",
+            "Impossible d'effectuer la vérification.",
       );
     } finally {
-      if (mounted) setState(() => _searching = false);
+      if (mounted) {
+        setState(() => _searching = false);
+      }
     }
   }
 
-  Future<void> _handleRequestAccount(BuildContext context) async {
+  void _onProfileTap() {
     final auth = context.read<AuthController>();
-    final res = await showModalBottomSheet<_AccountRequestChoice>(
+
+    if (auth.isAuthenticated) {
+      final t = auth.currentUser?.accountType;
+
+      context.go(
+        t == AccountType.enterprise
+            ? AppRoutes.enterpriseDashboard
+            : AppRoutes.userDashboard,
+      );
+    } else {
+      context.push(AppRoutes.login);
+    }
+  }
+
+  void _onMessagesTap() {
+    final auth = context.read<AuthController>();
+
+    if (auth.isAuthenticated) {
+      context.push(AppRoutes.chat);
+    } else {
+      context.push(AppRoutes.login);
+    }
+  }
+
+  Future<void> _handleRequestAccount(
+      BuildContext context) async {
+    final auth = context.read<AuthController>();
+
+    final res =
+        await showModalBottomSheet<_AccountRequestChoice>(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AccountRequestSheet(),
+      isScrollControlled: true,
+      builder: (_) => const AccountRequestSheet(),
     );
 
     switch (res) {
       case _AccountRequestChoice.personal:
-        if (auth.isAuthenticated) await auth.signOut();
-        if (context.mounted) context.push(AppRoutes.personalReg);
+        if (auth.isAuthenticated) {
+          await auth.signOut();
+        }
+
+        if (context.mounted) {
+          context.push(AppRoutes.personalReg);
+        }
+
         return;
+
       case _AccountRequestChoice.enterprise:
-        if (auth.isAuthenticated) await auth.signOut();
-        if (context.mounted) context.push(AppRoutes.enterpriseReg);
+        if (auth.isAuthenticated) {
+          await auth.signOut();
+        }
+
+        if (context.mounted) {
+          context.push(AppRoutes.enterpriseReg);
+        }
+
         return;
+
       case null:
         return;
     }
@@ -366,709 +217,927 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
-    final unreadStream = auth.currentUser == null ? Stream<int>.value(0) : _notifications.streamUnreadCount(auth.currentUser!.id);
-    final isDark = context.theme.brightness == Brightness.dark;
-    final goldBorder =
-        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
-            .withValues(alpha: 0.6);
-    final safeBottom = MediaQuery.paddingOf(context).bottom;
+
     final safeTop = MediaQuery.paddingOf(context).top;
-    final w = MediaQuery.sizeOf(context).width;
-    final isCompact = w < 380;
-    // Reserve space so the last row (Opportunités / Événements / Réseau Pro)
-    // is never hidden under the floating Urgence/Chat buttons.
-    final bottomReservedSpace = safeBottom + 120.0;
+
+    final badgeCountsStream = auth.currentUser == null
+        ? Stream.value(SectionBadgeCounts.zero)
+        : _counters.streamCounts(auth.currentUser!.id);
+
     return Scaffold(
-      backgroundColor: context.theme.scaffoldBackgroundColor,
+      backgroundColor: PremiumColors.backgroundLight,
+
       body: Stack(
         children: [
-          GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: Column(
-              children: [
-                // FIXED area (header + quick actions + notifications)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Stack(
-                      alignment: Alignment.topCenter,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: (isCompact ? 206 : 220) + safeTop,
-                          padding: EdgeInsets.only(top: safeTop),
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0xFF0A2F5C), Color(0xFF0F2B4A)]),
-                            borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(32),
-                                bottomRight: Radius.circular(32)),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                  right: -100,
-                                  bottom: -50,
-                                  child: Icon(Icons.fingerprint,
-                                      size: 400,
-                                      color: LightModeColors.accent
-                                          .withValues(alpha: 0.05))),
-                              Positioned(
-                                  left: -80,
-                                  top: -20,
-                                  child: Icon(Icons.security,
-                                      size: 200,
-                                      color: LightModeColors.accent
-                                          .withValues(alpha: 0.03))),
-                            ],
+                    Container(
+                      height: 365,
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            PremiumColors.primaryDark,
+                            PremiumColors.primaryElectric,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(42),
+                          bottomRight: Radius.circular(42),
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      right: -60,
+                      top: 40,
+                      child: Container(
+                        width: 220,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              Colors.white.withOpacity(0.06),
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      left: -40,
+                      bottom: -50,
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              Colors.white.withOpacity(0.05),
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      right: -20,
+                      bottom: -20,
+                      child: Icon(
+                        Icons.fingerprint_rounded,
+                        size: 180,
+                        color:
+                            Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+
+                    Positioned(
+                      top: 90,
+                      right: 80,
+                      child: Column(
+                        children: List.generate(
+                          8,
+                          (index) => Padding(
+                            padding:
+                                const EdgeInsets.symmetric(
+                              vertical: 4,
+                            ),
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white
+                                    .withOpacity(0.2),
+                              ),
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(
-                              top: safeTop + (isCompact ? 70 : 86)),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+                      ),
+                    ),
+
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        22,
+                        safeTop + 18,
+                        22,
+                        0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment
+                                    .spaceBetween,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 48,
-                                    height: 48,
+                                    width: 58,
+                                    height: 58,
                                     decoration: BoxDecoration(
-                                      color: Colors.transparent,
-                                      border: Border.all(
-                                          color: LightModeColors.accent,
-                                          width: 2),
                                       borderRadius:
-                                          BorderRadius.circular(AppRadius.lg),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Colors.black
-                                                .withValues(alpha: 0.05),
-                                            blurRadius: 3,
-                                            offset: const Offset(0, 1))
-                                      ],
+                                          BorderRadius
+                                              .circular(18),
+                                      border: Border.all(
+                                        color: Colors.white
+                                            .withOpacity(0.6),
+                                        width: 1.5,
+                                      ),
                                     ),
-                                    alignment: Alignment.center,
-                                    child: const Icon(Icons.fingerprint,
-                                        color: LightModeColors.accent,
-                                        size: 32),
+                                    child: const Icon(
+                                      Icons
+                                          .fingerprint_rounded,
+                                      color: Colors.white,
+                                      size: 34,
+                                    ),
                                   ),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Flexible(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text('THIX ID',
-                                            style: context
-                                                .textStyles.headlineMedium
-                                                ?.copyWith(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w800,
-                                                    letterSpacing: 1.5)),
-                                        Text(
-                                            'Identité Sécurisée. Avenir de Confiance.',
-                                            style: context.textStyles.labelSmall
-                                                ?.copyWith(
-                                                    color: Colors.white
-                                                        .withValues(alpha: 0.9),
-                                                    fontWeight:
-                                                        FontWeight.w300)),
-                                      ],
-                                    ),
+
+                                  const SizedBox(width: 14),
+
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment
+                                            .start,
+                                    children: [
+                                      const Text(
+                                        'THIX ID',
+                                        style: TextStyle(
+                                          color:
+                                              Colors.white,
+                                          fontSize: 24,
+                                          fontWeight:
+                                              FontWeight
+                                                  .w800,
+                                        ),
+                                      ),
+
+                                      Text(
+                                        'Identité Sécurisée.\nAvenir de Confiance.',
+                                        style: TextStyle(
+                                          color: Colors
+                                              .white
+                                              .withOpacity(
+                                                  0.85),
+                                          fontSize: 11,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(
-                              top: safeTop + (isCompact ? 150 : 168)),
-                          width: w * (isCompact ? 0.94 : 0.92),
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: context.theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(AppRadius.full),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 10))
-                            ],
-                            border: Border.all(color: goldBorder),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(20, 4, 4, 4),
-                          alignment: Alignment.center,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.search,
-                                  color: LightModeColors.hint, size: 22),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: TextField(
-                                  controller: _searchController,
-                                  textInputAction: TextInputAction.search,
-                                  onSubmitted: (_) => _searching
-                                      ? null
-                                      : _handleHomeSearchVerify(),
-                                  decoration: InputDecoration(
-                                      hintText: 'Rechercher un THIX ID...',
-                                      hintStyle: context.textStyles.bodyMedium
-                                          ?.copyWith(
-                                              color: LightModeColors.hint),
-                                      border: InputBorder.none,
-                                      isDense: true),
-                                ),
-                              ),
+
                               GestureDetector(
-                                onTap:
-                                    _searching ? null : _handleHomeSearchVerify,
+                                onTap: _onProfileTap,
                                 child: Container(
-                                  height: 48,
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: isCompact
-                                          ? AppSpacing.md
-                                          : AppSpacing.lg),
+                                  width: 54,
+                                  height: 54,
                                   decoration: BoxDecoration(
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.full),
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
                                     boxShadow: [
                                       BoxShadow(
-                                          color: Colors.black
-                                              .withValues(alpha: 0.1),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 4))
+                                        color: Colors.black
+                                            .withOpacity(
+                                                0.12),
+                                        blurRadius: 12,
+                                        offset:
+                                            const Offset(
+                                          0,
+                                          6,
+                                        ),
+                                      ),
                                     ],
-                                    gradient: const LinearGradient(colors: [
-                                      LightModeColors.accent,
-                                      LightModeColors.metalGold
-                                    ]),
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text('Vérifier',
-                                      style: context.textStyles.labelLarge
-                                          ?.copyWith(
-                                              color: const Color(0xFF0A2F5C),
-                                              fontWeight: FontWeight.w800)),
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: PremiumColors
+                                        .primaryDark,
+                                    size: 28,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
-                      child: Row(
-                        children: [
-                          RichGoldAction(icon: Icons.qr_code_scanner_rounded, label: 'Scanner QR', onTap: () => ThixIdentitySheets.showQrScanSheet(context)),
-                          const SizedBox(width: AppSpacing.md),
-                          RichGoldAction(icon: Icons.nfc_rounded, label: 'Lire via NFC', onTap: () => ThixIdentitySheets.showNfcScanSheet(context)),
+
+                          const SizedBox(height: 36),
+
+                          const Text(
+                            'Bienvenue !',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 42,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            'Que voulez-vous faire aujourd’hui ?',
+                            style: TextStyle(
+                              color:
+                                  Colors.white.withOpacity(0.9),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
-                      child: _NotificationsPanel(
-                        isAuthenticated: auth.isAuthenticated,
-                        notifications: auth.currentUser == null
-                            ? null
-                            : _notifications
-                                .streamForUser(auth.currentUser!.id),
-                        onSeeMore: () {
-                          if (!auth.isAuthenticated) {
-                            context.push(AppRoutes.login);
-                            return;
-                          }
-                          NotificationsSheet.show(context);
-                        },
-                        onMarkRead: (notificationId) {
-                          final me = auth.currentUser;
-                          if (me == null) return;
-                          _notifications.markRead(
-                              uid: me.id, notificationId: notificationId);
-                        },
+
+                    Positioned(
+                      left: 22,
+                      right: 22,
+                      bottom: -34,
+                      child: Container(
+                        height: 72,
+                        padding:
+                            const EdgeInsets.symmetric(
+                          horizontal: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius:
+                              BorderRadius.circular(34),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  Colors.black.withOpacity(
+                                0.08,
+                              ),
+                              blurRadius: 30,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 10),
+
+                            const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF9094A6),
+                              size: 26,
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: TextField(
+                                controller:
+                                    _searchController,
+                                decoration:
+                                    const InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText:
+                                      'Rechercher un THIX ID...',
+                                  hintStyle: TextStyle(
+                                    color:
+                                        Color(0xFF9AA0B5),
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            GestureDetector(
+                              onTap: _searching
+                                  ? null
+                                  : _handleHomeSearchVerify,
+                              child: Container(
+                                height: 54,
+                                padding:
+                                    const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                decoration:
+                                    BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius
+                                          .circular(28),
+                                  gradient:
+                                      const LinearGradient(
+                                    colors: [
+                                      PremiumColors
+                                          .primaryElectric,
+                                      PremiumColors
+                                          .primaryDark,
+                                    ],
+                                  ),
+                                ),
+                                child: Row(
+                                  children: const [
+                                    Text(
+                                      'Vérifier',
+                                      style: TextStyle(
+                                        color:
+                                            Colors.white,
+                                        fontWeight:
+                                            FontWeight
+                                                .w700,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(
+                                      Icons
+                                          .arrow_forward_rounded,
+                                      color:
+                                          Colors.white,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-                // MOBILE area (everything below notifications)
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics()),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
-                          child: LayoutBuilder(
-                            builder: (context, c) {
-                              final stackVertically = c.maxWidth < 360;
-                              return StreamBuilder<int>(
-                                stream: unreadStream,
-                                builder: (context, unreadSnap) {
-                                  final badge = unreadSnap.data ?? 0;
+              ),
 
-                                  final requestButton = PremiumGridCard(
-                                    icon: Icons.person_add_alt_1_rounded,
-                                    label: 'Demander un\nCompte',
-                                    compact: true,
-                                    badgeCount: badge,
-                                    onTap: () => _handleRequestAccount(context),
-                                  );
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 58),
+              ),
 
-                                  final accountButton = PremiumGridCard(
-                                    icon: Icons.account_circle_rounded,
-                                    label: 'Mon\nCompte',
-                                    compact: true,
-                                    badgeCount: badge,
-                                    onTap: () {
-                                      if (auth.isAuthenticated) {
-                                        final t = auth.currentUser?.accountType;
-                                        context.go(t == AccountType.enterprise ? AppRoutes.enterpriseDashboard : AppRoutes.userDashboard);
-                                        return;
-                                      }
-                                      context.push(AppRoutes.login);
-                                    },
-                                  );
+              SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _QuickCard(
+                          title: 'Scanner un QR',
+                          subtitle:
+                              'Scannez un code\nen toute sécurité',
+                          icon:
+                              Icons.qr_code_scanner_rounded,
+                          bg: PremiumColors.lavenderLight,
+                          actionColor:
+                              PremiumColors.primaryElectric,
+                          onTap: () {
+                            ThixIdentitySheets
+                                .showQrScanSheet(context);
+                          },
+                        ),
+                      ),
 
-                                  if (!stackVertically) {
-                                    return SizedBox(
-                                      height: 92,
-                                      child: Row(
-                                        children: [
-                                          requestButton,
-                                          const SizedBox(width: AppSpacing.md),
-                                          accountButton,
-                                        ],
-                                      ),
-                                    );
-                                  }
+                      const SizedBox(width: 16),
 
-                                  return Column(
-                                    children: [
-                                      SizedBox(height: 92, child: Row(children: [requestButton])),
-                                      const SizedBox(height: AppSpacing.md),
-                                      SizedBox(height: 92, child: Row(children: [accountButton])),
-                                    ],
-                                  );
-                                },
-                              );
+                      Expanded(
+                        child: _QuickCard(
+                          title: 'Lire via NFC',
+                          subtitle:
+                              'Approchez votre\nappareil',
+                          icon: Icons.fingerprint_rounded,
+                          bg: PremiumColors.mintLight,
+                          actionColor: Colors.green,
+                          onTap: () {
+                            ThixIdentitySheets
+                                .showNfcScanSheet(context);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 20),
+              ),
+
+              SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(
+                  child: _NotificationPreviewCard(
+                    onTap: () {
+                      if (!auth.isAuthenticated) {
+                        context.push(AppRoutes.login);
+                        return;
+                      }
+
+                      NotificationsSheet.show(context);
+                    },
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 26),
+              ),
+
+              SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        'Nos services',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              PremiumColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Tout voir',
+                        style: TextStyle(
+                          color: PremiumColors
+                              .primaryElectric,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 18),
+              ),
+
+              SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                sliver: StreamBuilder<SectionBadgeCounts>(
+                  stream: badgeCountsStream,
+                  builder: (context, snap) {
+                    final counts =
+                        snap.data ?? SectionBadgeCounts.zero;
+
+                    return SliverGrid(
+                      delegate:
+                          SliverChildListDelegate(
+                        [
+                          _ServiceCard(
+                            icon:
+                                Icons.person_add_alt_1,
+                            title:
+                                'Demander un\nCompte',
+                            iconBg:
+                                const Color(0xFFF0F4FF),
+                            iconColor:
+                                PremiumColors
+                                    .primaryElectric,
+                            onTap: () =>
+                                _handleRequestAccount(
+                                    context),
+                          ),
+
+                          _ServiceCard(
+                            icon:
+                                Icons.account_circle,
+                            title: 'Mon\nCompte',
+                            iconBg:
+                                const Color(0xFFF5ECFF),
+                            iconColor: Colors.purple,
+                            onTap: _onProfileTap,
+                          ),
+
+                          _ServiceCard(
+                            icon: Icons.school,
+                            title: 'Formations',
+                            iconBg:
+                                const Color(0xFFE8FFF5),
+                            iconColor: Colors.green,
+                            badgeCount:
+                                counts.formations,
+                            onTap: () {
+                              context.push(
+                                  AppRoutes.trainingHome);
                             },
                           ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.fromLTRB(
-                              AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                LightModeColors.metalGold,
-                                LightModeColors.accent,
-                                LightModeColors.metalGoldSoft,
-                                LightModeColors.metalGold,
-                                LightModeColors.metalGoldDeep
-                              ],
-                              stops: [0, 0.3, 0.5, 0.7, 1],
+
+                          _ServiceCard(
+                            icon: Icons.work,
+                            title: 'Emplois',
+                            iconBg:
+                                const Color(0xFFFFF4E9),
+                            iconColor: Colors.orange,
+                            badgeCount: counts.jobs,
+                            onTap: () {
+                              context.push(
+                                  AppRoutes.jobs);
+                            },
+                          ),
+
+                          _ServiceCard(
+                            icon: Icons.newspaper,
+                            title: 'THIX\nINFO',
+                            iconBg:
+                                const Color(0xFFEFF3FF),
+                            iconColor:
+                                PremiumColors
+                                    .primaryElectric,
+                            badgeCount: counts.info,
+                            onTap: () {
+                              AlertInfoSheet.show(
+                                  context);
+                            },
+                          ),
+
+                          _ServiceCard(
+                            icon:
+                                Icons.lightbulb_rounded,
+                            title:
+                                'Opportunités',
+                            iconBg:
+                                const Color(0xFFFFF8E8),
+                            iconColor: Colors.amber,
+                            badgeCount:
+                                counts.opportunities,
+                            onTap: () {
+                              context.push(
+                                  AppRoutes
+                                      .opportunities);
+                            },
+                          ),
+
+                          _ServiceCard(
+                            icon: Icons.event,
+                            title:
+                                'Événements',
+                            iconBg:
+                                const Color(0xFFF8ECFF),
+                            iconColor: Colors.purple,
+                            badgeCount:
+                                counts.events,
+                            onTap: () {
+                              context.push(
+                                  AppRoutes.events);
+                            },
+                          ),
+
+                          _ServiceCard(
+                            icon: Icons.groups,
+                            title: 'Réseau\nPro',
+                            iconBg:
+                                const Color(0xFFFFEEF5),
+                            iconColor: Colors.pink,
+                            onTap: () {
+                              context.push(
+                                  AppRoutes.network);
+                            },
+                          ),
+                        ],
+                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 14,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.78,
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 28),
+              ),
+
+              SliverPadding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverToBoxAdapter(
+                  child: Container(
+                    height: 170,
+                    decoration: BoxDecoration(
+                      borderRadius:
+                          BorderRadius.circular(28),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          PremiumColors.primaryDark,
+                          PremiumColors.primaryElectric,
+                        ],
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: -20,
+                          right: -10,
+                          child: Container(
+                            width: 140,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white
+                                  .withOpacity(0.08),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.12),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 10))
+                          ),
+                        ),
+
+                        Padding(
+                          padding:
+                              const EdgeInsets.all(22),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment
+                                          .start,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment
+                                          .center,
+                                  children: [
+                                    Text(
+                                      'NOTRE MISSION',
+                                      style: TextStyle(
+                                        color: Colors
+                                            .white
+                                            .withOpacity(
+                                                0.7),
+                                        fontSize: 13,
+                                        fontWeight:
+                                            FontWeight
+                                                .w700,
+                                        letterSpacing:
+                                            1.2,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                        height: 10),
+
+                                    const Text(
+                                      'Construisons ensemble\nl’avenir de la jeunesse.',
+                                      style: TextStyle(
+                                        color:
+                                            Colors.white,
+                                        fontSize: 26,
+                                        fontWeight:
+                                            FontWeight
+                                                .w800,
+                                        height: 1.15,
+                                      ),
+                                    ),
+
+                                    const SizedBox(
+                                        height: 10),
+
+                                    Text(
+                                      'Accédez à des opportunités,\ndes ressources et un réseau engagé.',
+                                      style: TextStyle(
+                                        color: Colors
+                                            .white
+                                            .withOpacity(
+                                                0.9),
+                                        fontSize: 14,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              const Icon(
+                                Icons.groups_rounded,
+                                size: 86,
+                                color: Colors.white,
+                              ),
                             ],
                           ),
-                          child: StreamBuilder<int>(
-                            stream: unreadStream,
-                            builder: (context, unreadSnap) {
-                              final badge = unreadSnap.data ?? 0;
-                              return Container(
-                            decoration: BoxDecoration(
-                                color: context.theme.colorScheme.surface,
-                                borderRadius: BorderRadius.circular(22)),
-                            clipBehavior: Clip.antiAlias,
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    PremiumGridCard(
-                                      icon: Icons.school_rounded,
-                                      label: 'Formations',
-                                      badgeCount: badge,
-                                      onTap: () =>
-                                          context.push(AppRoutes.education),
-                                    ),
-                                    const SizedBox(width: AppSpacing.md),
-                                    PremiumGridCard(
-                                      icon: Icons.work_rounded,
-                                      label: 'Emploi',
-                                      badgeCount: badge,
-                                      onTap: () => context.push(AppRoutes.jobs),
-                                    ),
-                                    PremiumGridCard(
-                                      icon: Icons.newspaper_rounded,
-                                      label: 'THIX\nINFO',
-                                      filled: true,
-                                      badgeCount: badge,
-                                      onTap: () => AlertInfoSheet.show(context),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                Row(
-                                  children: [
-                                    PremiumGridCard(
-                                        icon: Icons.lightbulb_rounded,
-                                        label: 'Opportunités',
-                                        badgeCount: badge,
-                                        imageAssetPath: 'assets/images/Office_team_grayscale_1775574009745.jpg',
-                                        onTap: () =>
-                                            context.push(AppRoutes.opportunities)),
-                                    const SizedBox(width: AppSpacing.md),
-                                    PremiumGridCard(
-                                        icon: Icons.event_available_rounded,
-                                        label: 'Événements',
-                                        badgeCount: badge,
-                                        imageAssetPath: 'assets/images/Senior_professional_man_grayscale_1775573975687.jpg',
-                                        onTap: () =>
-                                            context.push(AppRoutes.events)),
-                                    const SizedBox(width: AppSpacing.md),
-                                    PremiumGridCard(
-                                        icon: Icons.groups_rounded,
-                                        label: 'Réseau Pro',
-                                        badgeCount: badge,
-                                        onTap: () =>
-                                            context.push(AppRoutes.network)),
-                                  ],
-                                ),
-                              ],
-                            ),
-                              );
-                            },
-                          ),
                         ),
-                        SizedBox(height: bottomReservedSpace),
                       ],
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          // Removed duplicate emergency button on Home page.
-          // The animated EmergencyFab lives only on Home page.
-          Positioned(
-            bottom: safeBottom + 16,
-            left: 24,
-            child: const EmergencyFab(),
-          ),
-          Positioned(
-            bottom: safeBottom + 16,
-            right: 24,
-            child: GestureDetector(
-              onTap: () {
-                if (auth.isAuthenticated) {
-                  context.push(AppRoutes.chat);
-                  return;
-                }
-                context.push(AppRoutes.login);
-              },
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 25,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
-                  gradient: const LinearGradient(
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                    colors: [Color(0xFFD4AF37), Color(0xFFF9C74F)],
-                  ),
-                ),
-                child: Container(
-                  margin: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: context.theme.colorScheme.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: const BoxDecoration(
-                      color: LightModeColors.accent,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.forum_rounded,
-                        color: Color(0xFF0A2F5C), size: 26),
-                  ),
-                ),
               ),
-            ),
-          ),
-          if (_searching)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.12),
-                alignment: Alignment.center,
-                child: const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 3)),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
-class _NotificationsPanel extends StatelessWidget {
-  final bool isAuthenticated;
-  final Stream<List<Map<String, dynamic>>>? notifications;
-  final VoidCallback onSeeMore;
-  final void Function(String notificationId) onMarkRead;
-
-  static final AccessRequestService _access = AccessRequestService();
-
-  const _NotificationsPanel(
-      {required this.isAuthenticated,
-      required this.notifications,
-      required this.onSeeMore,
-      required this.onMarkRead});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final isDark = context.theme.brightness == Brightness.dark;
-    final goldBorder =
-        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
-            .withValues(alpha: 0.55);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: goldBorder),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 10))
-        ],
-      ),
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                    color: LightModeColors.accent.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(AppRadius.md)),
-                alignment: Alignment.center,
-                child: const Icon(Icons.notifications_rounded,
-                    color: LightModeColors.accent, size: 17),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text('Notifications',
-                    style: context.textStyles.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800, color: cs.onSurface)),
-              ),
-              TextButton(
-                onPressed: onSeeMore,
-                style: TextButton.styleFrom(
-                    foregroundColor: LightModeColors.accent,
-                    padding: EdgeInsets.zero),
-                child: Text('Voir plus  ›',
-                    style: context.textStyles.labelLarge?.copyWith(
-                        color: LightModeColors.accent,
-                        fontWeight: FontWeight.w800)),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 120),
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          if (!isAuthenticated)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 6, 4, 2),
-              child: Text('Connectez-vous pour voir vos notifications.',
-                  style: context.textStyles.bodySmall?.copyWith(
-                      color: LightModeColors.secondaryText, height: 1.4)),
-            )
-          else
-            _HomeReceptionPreview(
-              pendingAccessCount: _access.streamIncomingPendingCount(ownerId: context.read<AuthController>().currentUser?.id ?? ''),
-              notifications: notifications,
-              onSeeMore: onSeeMore,
-              onMarkRead: onMarkRead,
-              goldBorder: goldBorder,
+
+          if (_searching)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.2),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
         ],
+      ),
+
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          18,
+          0,
+          18,
+          18,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(34),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: 14,
+              sigmaY: 14,
+            ),
+            child: Container(
+              height: 82,
+              decoration: BoxDecoration(
+                color:
+                    Colors.white.withOpacity(0.92),
+                borderRadius:
+                    BorderRadius.circular(34),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Colors.black.withOpacity(0.08),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceAround,
+                children: [
+                  _NavItem(
+                    icon: Icons.home_filled,
+                    label: 'Accueil',
+                    active: true,
+                    onTap: () {},
+                  ),
+
+                  _NavItem(
+                    icon: Icons.grid_view_rounded,
+                    label: 'Services',
+                    onTap: () {},
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+                      ThixIdentitySheets
+                          .showQrScanSheet(context);
+                    },
+                    child: Container(
+                      width: 68,
+                      height: 68,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            PremiumColors
+                                .primaryElectric,
+                            PremiumColors.primaryDark,
+                          ],
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.qr_code_scanner,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+
+                  _NavItem(
+                    icon:
+                        Icons.chat_bubble_outline,
+                    label: 'Messages',
+                    onTap: _onMessagesTap,
+                  ),
+
+                  _NavItem(
+                    icon: Icons.person_outline,
+                    label: 'Profil',
+                    onTap: _onProfileTap,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _HomeReceptionPreview extends StatelessWidget {
-  final Stream<int> pendingAccessCount;
-  final Stream<List<Map<String, dynamic>>>? notifications;
-  final VoidCallback onSeeMore;
-  final void Function(String notificationId) onMarkRead;
-  final Color goldBorder;
-
-  const _HomeReceptionPreview({required this.pendingAccessCount, required this.notifications, required this.onSeeMore, required this.onMarkRead, required this.goldBorder});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<int>(
-      stream: pendingAccessCount,
-      builder: (context, accessSnap) {
-        final pending = accessSnap.data ?? 0;
-        return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: notifications,
-          builder: (context, snap) {
-            final rows = snap.data ?? const <Map<String, dynamic>>[];
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.all(12),
-                child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))),
-              );
-            }
-
-            if (pending > 0) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(4, AppSpacing.sm, 4, 4),
-                child: Text('Vous avez $pending demande(s) d\'accès en attente. Touchez « Voir plus » pour approuver.',
-                    style: context.textStyles.bodySmall?.copyWith(color: LightModeColors.secondaryText, height: 1.4)),
-              );
-            }
-
-            if (rows.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(4, AppSpacing.sm, 4, 4),
-                child: Text('Aucune notification.', style: context.textStyles.bodySmall?.copyWith(color: LightModeColors.secondaryText, height: 1.4)),
-              );
-            }
-
-            final shown = rows.take(2).toList(growable: false);
-            return Column(
-              children: [
-                for (var i = 0; i < shown.length; i++) ...[
-                  _HomeNotificationTile(
-                    title: (shown[i]['title'] as String?) ?? 'Notification',
-                    subtitle: (shown[i]['body'] as String?) ?? '',
-                    read: (shown[i]['read'] as bool?) ?? false,
-                    onTap: () {
-                      final id = (shown[i]['id'] ?? '').toString();
-                      if (id.isEmpty) return;
-                      onMarkRead(id);
-                    },
-                  ),
-                  if (i != shown.length - 1) Divider(color: goldBorder.withValues(alpha: 0.35), height: 10),
-                ]
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _HomeNotificationTile extends StatelessWidget {
+class _QuickCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final bool read;
+  final IconData icon;
+  final Color bg;
+  final Color actionColor;
   final VoidCallback onTap;
 
-  const _HomeNotificationTile(
-      {required this.title,
-      required this.subtitle,
-      required this.read,
-      required this.onTap});
+  const _QuickCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.bg,
+    required this.actionColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final isDark = context.theme.brightness == Brightness.dark;
-    final goldBorder =
-        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
-            .withValues(alpha: 0.45);
-    return InkWell(
-      splashFactory: NoSplash.splashFactory,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
+    return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: read
-                    ? context.theme.scaffoldBackgroundColor
-                    : LightModeColors.accent.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: goldBorder),
-              ),
-              alignment: Alignment.center,
-              child: Icon(Icons.notifications_rounded,
-                  color: read ? cs.primary : LightModeColors.accent, size: 18),
+            Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius:
+                        BorderRadius.circular(18),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 30,
+                    color:
+                        PremiumColors.primaryDark,
+                  ),
+                ),
+
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: actionColor,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: context.textStyles.bodyMedium?.copyWith(
-                          fontWeight: read ? FontWeight.w600 : FontWeight.w800,
-                          height: 1.15)),
-                  const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: context.textStyles.bodySmall?.copyWith(
-                          color: LightModeColors.secondaryText, height: 1.35),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                ],
+
+            const SizedBox(height: 16),
+
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            if (!read)
-              Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                      color: LightModeColors.accent, shape: BoxShape.circle))
-            else
-              const SizedBox(width: 8, height: 8),
+
+            const SizedBox(height: 6),
+
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 13,
+                color:
+                    PremiumColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
           ],
         ),
       ),
@@ -1076,82 +1145,371 @@ class _HomeNotificationTile extends StatelessWidget {
   }
 }
 
-enum _AccountRequestChoice { personal, enterprise }
+class _NotificationPreviewCard
+    extends StatelessWidget {
+  final VoidCallback onTap;
 
-/// Bottom sheet allowing the user to choose what type of account to request.
-class AccountRequestSheet extends StatelessWidget {
+  const _NotificationPreviewCard({
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius:
+              BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 62,
+                  height: 62,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        PremiumColors
+                            .primaryElectric,
+                        PremiumColors.primaryDark,
+                      ],
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.notifications,
+                    color: Colors.white,
+                  ),
+                ),
+
+                Positioned(
+                  right: 2,
+                  top: -2,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(width: 18),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Notifications',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          FontWeight.w700,
+                    ),
+                  ),
+
+                  SizedBox(height: 6),
+
+                  Text(
+                    'Restez informé de vos activités\net mises à jour.',
+                    style: TextStyle(
+                      color: PremiumColors
+                          .textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Column(
+              children: const [
+                Text(
+                  'Voir tout',
+                  style: TextStyle(
+                    color: PremiumColors
+                        .primaryDark,
+                    fontWeight:
+                        FontWeight.w700,
+                  ),
+                ),
+
+                SizedBox(height: 8),
+
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color:
+                      PremiumColors.primaryDark,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ServiceCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color iconBg;
+  final Color iconColor;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  const _ServiceCard({
+    required this.icon,
+    required this.title,
+    required this.iconBg,
+    required this.iconColor,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius:
+              BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 28,
+                  ),
+                ),
+
+                if (badgeCount > 0)
+                  Positioned(
+                    top: -4,
+                    right: -2,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.all(4),
+                      decoration:
+                          const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment:
+            MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: active
+                ? PremiumColors.primaryElectric
+                : Colors.grey.shade500,
+            size: 26,
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: active
+                  ? PremiumColors.primaryElectric
+                  : Colors.grey.shade500,
+            ),
+          ),
+
+          if (active)
+            Container(
+              margin: const EdgeInsets.only(top: 5),
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color:
+                    PremiumColors.primaryElectric,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _AccountRequestChoice {
+  personal,
+  enterprise
+}
+
+class AccountRequestSheet
+    extends StatelessWidget {
   const AccountRequestSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final isDark = context.theme.brightness == Brightness.dark;
-    final goldBorder =
-        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
-            .withValues(alpha: 0.55);
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
-        child: Container(
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: goldBorder),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 30,
-                  offset: const Offset(0, 18))
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(34),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                width: 44,
+                width: 46,
                 height: 5,
-                margin: const EdgeInsets.only(bottom: AppSpacing.lg),
                 decoration: BoxDecoration(
-                    color: cs.onSurface.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999)),
+                  color: Colors.grey.shade300,
+                  borderRadius:
+                      BorderRadius.circular(10),
+                ),
               ),
-              Text('Demande de compte',
-                  style: context.textStyles.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800, color: cs.onSurface)),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Choisissez le profil à créer. Vous pourrez compléter les informations et finaliser le dossier ensuite.',
-                style: context.textStyles.bodyMedium?.copyWith(
-                    color: cs.onSurface.withValues(alpha: 0.78), height: 1.5),
+
+              const SizedBox(height: 26),
+
+              const Text(
+                'Demander un compte',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                'Choisissez le type de compte.',
+                style: TextStyle(
+                  color:
+                      PremiumColors.textSecondary,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
               _AccountChoiceTile(
-                icon: Icons.person_rounded,
+                icon: Icons.person_outline,
                 title: 'Compte Personnel',
-                subtitle: 'Citoyen / résident / étudiant',
-                onTap: () => context.pop(_AccountRequestChoice.personal),
+                subtitle:
+                    'Pour étudiants et citoyens',
+                onTap: () => context.pop(
+                  _AccountRequestChoice.personal,
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
+
+              const SizedBox(height: 16),
+
               _AccountChoiceTile(
-                icon: Icons.domain_rounded,
+                icon: Icons.business_outlined,
                 title: 'Compte Entreprise',
-                subtitle: 'Institution, société, ONG, établissement',
-                onTap: () => context.pop(_AccountRequestChoice.enterprise),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Align(
-                alignment: Alignment.center,
-                child: TextButton(
-                  onPressed: () => context.pop(),
-                  style: TextButton.styleFrom(
-                      foregroundColor: cs.onSurface.withValues(alpha: 0.8)),
-                  child: const Text('Annuler'),
+                subtitle:
+                    'Pour sociétés et institutions',
+                onTap: () => context.pop(
+                  _AccountRequestChoice.enterprise,
                 ),
               ),
             ],
@@ -1162,7 +1520,8 @@ class AccountRequestSheet extends StatelessWidget {
   }
 }
 
-class _AccountChoiceTile extends StatelessWidget {
+class _AccountChoiceTile
+    extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -1177,60 +1536,68 @@ class _AccountChoiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final isDark = context.theme.brightness == Brightness.dark;
-    final goldBorder =
-        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
-            .withValues(alpha: 0.45);
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: goldBorder),
+          color: PremiumColors.backgroundLight,
+          borderRadius:
+              BorderRadius.circular(24),
         ),
-        padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: LightModeColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.white,
+                borderRadius:
+                    BorderRadius.circular(18),
               ),
-              alignment: Alignment.center,
-              child: Icon(icon, color: LightModeColors.accent, size: 22),
+              child: Icon(
+                icon,
+                color:
+                    PremiumColors.primaryElectric,
+              ),
             ),
-            const SizedBox(width: AppSpacing.md),
+
+            const SizedBox(width: 16),
+
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: context.textStyles.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800, color: cs.onSurface)),
-                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight:
+                          FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
                   Text(
                     subtitle,
-                    style: context.textStyles.bodySmall?.copyWith(
-                        color: cs.onSurface.withValues(alpha: 0.72),
-                        height: 1.35),
+                    style: const TextStyle(
+                      color: PremiumColors
+                          .textSecondary,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Icon(Icons.arrow_forward_rounded,
-                color: cs.onSurface.withValues(alpha: 0.55), size: 18),
+
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-extension ThemeHelper on BuildContext {
-  ThemeData get theme => Theme.of(this);
 }
