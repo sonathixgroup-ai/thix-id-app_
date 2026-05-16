@@ -23,7 +23,7 @@ class PremiumColors {
   static const Color primaryDark = Color(0xFF030F54);      
   static const Color primaryElectric = Color(0xFF1E40AF);  
   static const Color white = Color(0xFFFFFFFF);
-  static const Color backgroundLight = Color(0xFFF8FAFC);  // Gris chirurgical ultra-propre
+  static const Color backgroundLight = Color(0xFFF8FAFC);  
   static const Color textPrimary = Color(0xFF0F172A);      
   static const Color textSecondary = Color(0xFF64748B);    
 }
@@ -41,7 +41,8 @@ class _HomePageState extends State<HomePage> {
   final _notifications = NotificationService();
   final _counters = NotificationCountersService();
 
-  static final RegExp _uidLikeRegex = RegExp(r'^[A-Za-z0-9-]{20,}$');
+  // Correction de la portée de la Regex
+  final RegExp _uidLikeRegex = RegExp(r'^[A-Za-z0-9-]{20,}$');
 
   @override
   void dispose() {
@@ -376,8 +377,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
               
-              // ==================== CORRECTION STRICTE : NOS SERVICES ====================
-              // Remplacement du GridView par des Rows d'éléments calibrés pour un alignement au pixel près
+              // ==================== SERVICES GRID COORDONNÉ ====================
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -514,7 +514,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 28)),
               
-              // MISSION BANNER
+              // MISSION BANNER - CORRIGÉE ICI (Faute de frappe résolue)
               SliverToBoxAdapter(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -531,7 +531,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Expanded(
                         child: Column(
-                          cross classAppUser: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start, // Syntaxe nettoyée ici
                           children: [
                             const Text(
                               'NOTRE MISSION',
@@ -613,9 +613,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ==================== WIDGETS AUXILIAIRES PARFAITEMENT ÉCHELONNÉS ====================
-
-// LE COMPOSANT REFAIT COMPACT EXACTEMENT COMME LA PHOTO
 class _ServiceItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -633,7 +630,6 @@ class _ServiceItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calcul de la largeur adaptative pour s'assurer que 4 colonnes entrent parfaitement avec de l'espace
     final itemWidth = (MediaQuery.of(context).size.width - 40 - 30) / 4;
 
     return GestureDetector(
@@ -644,7 +640,6 @@ class _ServiceItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Le carré parfait aux coins doux (comme sur la photo)
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -653,7 +648,7 @@ class _ServiceItem extends StatelessWidget {
                   width: 56,
                   decoration: BoxDecoration(
                     color: iconColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16), // Coins arrondis parfaits du modèle
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(icon, color: iconColor, size: 26),
                 ),
@@ -672,26 +667,25 @@ class _ServiceItem extends StatelessWidget {
                       ),
                     ),
                   ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Le texte centré, de petite taille, sans débordement
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12, 
-              fontWeight: FontWeight.w500, 
-              color: PremiumColors.textPrimary,
-              height: 1.2,
+              ],
             ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12, 
+                fontWeight: FontWeight.w500, 
+                color: PremiumColors.textPrimary,
+                height: 1.2,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _ActionCard extends StatelessWidget {
@@ -805,84 +799,4 @@ class _NotificationsCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('Notifications', style: TextStyle(fontSize: 11, color: PremiumColors.textSecondary, fontWeight: FontWeight.bold)),
-                          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: PremiumColors.textPrimary)),
-                        ],
-                      );
-                    },
-                  ),
-          ),
-          IconButton(
-            onPressed: onSeeMore,
-            icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: PremiumColors.textSecondary),
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _BottomNavItem({required this.icon, required this.label, required this.isSelected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: isSelected ? const Color(0xFF2563EB) : PremiumColors.textSecondary, size: 22),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? const Color(0xFF2563EB) : PremiumColors.textSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-enum _AccountRequestChoice { personal, enterprise }
-
-class AccountRequestSheet extends StatelessWidget {
-  const AccountRequestSheet({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: PremiumColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              const Text('Demander un compte', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: PremiumColors.textPrimary)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.person_outline_rounded, color: Color(0xFF2563EB)),
-                title: const Text('Compte Personnel', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Pour particuliers et citoyens'),
-                onTap: () => Navigator.of(context).pop(_AccountRequestChoice.personal),
-              ),
-              ListTile(
-                leading: const Icon(Icons.business_center_rounded, color: Color(0xFF1D4ED8)),
-                title: const Text('Compte Entreprise', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Pour institutions et sociétés'),
-                onTap: () => Navigator.of(context).pop(_AccountRequestChoice.enterprise),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+                          Text(title, maxLines: 1, overflow: TextOverflow.
