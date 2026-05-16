@@ -18,19 +18,14 @@ import 'package:thix_id/l10n/locale_controller.dart';
 import '../../theme.dart';
 import '../../nav.dart';
 
-// ==================== PALETTE DE COULEURS PREMIUM REVISITÉE ====================
+// ==================== PALETTE DE COULEURS PREMIUM ====================
 class PremiumColors {
-  static const Color primaryDark = Color(0xFF030F54);      // Bleu Nuit profond
-  static const Color primaryElectric = Color(0xFF1E40AF);  // Bleu Institutionnel
-  static const Color accentGold = Color(0xFFD4AF37);       // Or Métallique
+  static const Color primaryDark = Color(0xFF030F54);      
+  static const Color primaryElectric = Color(0xFF1E40AF);  
   static const Color white = Color(0xFFFFFFFF);
-  static const Color backgroundLight = Color(0xFFF4F7FE);  // Gris/Bleu très clair
-  static const Color textPrimary = Color(0xFF0F172A);      // Ardoise foncé
-  static const Color textSecondary = Color(0xFF64748B);    // Gris neutre
-  
-  // Teintes subtiles pour les conteneurs d'icônes
-  static const Color mintLight = Color(0xE8E0FBF2);
-  static const Color lavenderLight = Color(0xFFEEF2FF);
+  static const Color backgroundLight = Color(0xFFF8FAFC);  // Gris chirurgical ultra-propre
+  static const Color textPrimary = Color(0xFF0F172A);      
+  static const Color textSecondary = Color(0xFF64748B);    
 }
 
 class HomePage extends StatefulWidget {
@@ -46,7 +41,7 @@ class _HomePageState extends State<HomePage> {
   final _notifications = NotificationService();
   final _counters = NotificationCountersService();
 
-  static final RegExp uidLikeRegex = RegExp(r'^[A-Za-z0-9-]{20,}$');
+  static final RegExp _uidLikeRegex = RegExp(r'^[A-Za-z0-9-]{20,}$');
 
   @override
   void dispose() {
@@ -54,7 +49,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  // ==================== MÉTHODES DE LOGIQUE REPRISES ====================
   Future<void> _handleHomeSearchVerify() async {
     final raw = _searchController.text.trim();
     if (raw.isEmpty) {
@@ -157,9 +151,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Remplacement du bouton urgent au clic long sur le bouton de profil du haut
   void _onEmergencyTrigger() {
-    // Appel natif ou logique de secours associée à l'ancienne EmergencyFab
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Alerte d\'urgence initiée.'),
@@ -168,7 +160,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ==================== BUILD ====================
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
@@ -183,7 +174,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           CustomScrollView(
             slivers: [
-              // HEADER GRADIENT BLEU SUIVANT LE DESIGN FOURNI
+              // HEADER BANNER
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
@@ -191,107 +182,85 @@ class _HomePageState extends State<HomePage> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF0A2540), Color(0xFF0044FF)],
+                      colors: [Color(0xFF07165A), Color(0xFF1D4ED8)],
                     ),
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
                     ),
                   ),
                   child: Stack(
                     children: [
-                      // Points d'ancrage graphiques en arrière-plan
                       Positioned(
                         top: safeTop,
                         right: 20,
                         child: Opacity(
-                          opacity: 0.15,
-                          child: Icon(Icons.apps_rounded, size: 120, color: PremiumColors.white),
+                          opacity: 0.08,
+                          child: Icon(Icons.fingerprint_rounded, size: 140, color: PremiumColors.white),
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.only(top: safeTop + 20, left: 24, right: 24, bottom: 40),
+                        padding: EdgeInsets.only(top: safeTop + 16, left: 24, right: 24, bottom: 32),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Top Bar : Logo & Profil d'urgence
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: PremiumColors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      child: const Icon(Icons.fingerprint_rounded, color: PremiumColors.white, size: 28),
+                                    const Text(
+                                      'THIX ID',
+                                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: PremiumColors.white, letterSpacing: -0.5),
                                     ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const Text(
-                                              'THIX ID',
-                                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: PremiumColors.white, letterSpacing: -0.5),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: PremiumColors.accentGold)),
-                                          ],
-                                        ),
-                                        Text(
-                                          'Identité Sécurisée. Avenir de Confiance.',
-                                          style: TextStyle(fontSize: 11, color: PremiumColors.white.withOpacity(0.7), fontWeight: FontWeight.w400),
-                                        ),
-                                      ],
+                                    Text(
+                                      'Identité Sécurisée. Avenir de Confiance.',
+                                      style: TextStyle(fontSize: 12, color: PremiumColors.white.withOpacity(0.7)),
                                     ),
                                   ],
                                 ),
-                                // Bouton profil redirigeant ou déclenchant l'urgence sur appui long
                                 GestureDetector(
                                   onTap: _onProfileTap,
                                   onLongPress: _onEmergencyTrigger,
                                   child: Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: const BoxDecoration(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: PremiumColors.white,
+                                      border: Border.all(color: PremiumColors.white.withOpacity(0.2)),
+                                      color: PremiumColors.white.withOpacity(0.1),
                                     ),
-                                    child: const Icon(Icons.person_rounded, color: Color(0xFF0A2540), size: 24),
+                                    child: const Icon(Icons.person_outline_rounded, color: PremiumColors.white, size: 22),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 32),
                             const Text(
                               'Bienvenue !',
-                              style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: PremiumColors.white, letterSpacing: -0.5),
+                              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: PremiumColors.white, letterSpacing: -0.5),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Que voulez-vous faire aujourd’hui ?',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: PremiumColors.white.withOpacity(0.85)),
+                              style: TextStyle(fontSize: 15, color: PremiumColors.white.withOpacity(0.85)),
                             ),
-                            const SizedBox(height: 28),
-                            // Barre de recherche stylisée selon la maquette
+                            const SizedBox(height: 24),
                             Container(
-                              height: 60,
+                              height: 56,
                               decoration: BoxDecoration(
                                 color: PremiumColors.white,
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(28),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8)),
+                                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
                                 ],
                               ),
-                              padding: const EdgeInsets.only(left: 20, right: 6),
+                              padding: const EdgeInsets.only(left: 18, right: 6),
                               child: Row(
                                 children: [
                                   const Icon(Icons.search, color: PremiumColors.textSecondary, size: 22),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: TextField(
                                       controller: _searchController,
@@ -310,14 +279,14 @@ class _HomePageState extends State<HomePage> {
                                       backgroundColor: const Color(0xFF2563EB),
                                       foregroundColor: PremiumColors.white,
                                       elevation: 0,
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                                     ),
-                                    child: Row(
+                                    child: const Row(
                                       children: [
-                                        const Text('Vérifier', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                        const SizedBox(width: 6),
-                                        const Icon(Icons.arrow_forward, size: 16),
+                                        Text('Vérifier', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                        SizedBox(width: 4),
+                                        Icon(Icons.arrow_forward_rounded, size: 16),
                                       ],
                                     ),
                                   ),
@@ -332,7 +301,8 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // CARDS D'ACTIONS : SCANNER / NFC
+              
+              // SCAN / NFC CARDS
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -344,7 +314,7 @@ class _HomePageState extends State<HomePage> {
                           title: 'Scanner un QR',
                           subtitle: 'Scannez un code\nen toute sécurité',
                           onTap: () => ThixIdentitySheets.showQrScanSheet(context),
-                          iconBgColor: PremiumColors.backgroundLight,
+                          iconBgColor: const Color(0xFFEFF6FF),
                           iconColor: const Color(0xFF2563EB),
                           arrowColor: const Color(0xFF2563EB),
                         ),
@@ -356,9 +326,9 @@ class _HomePageState extends State<HomePage> {
                           title: 'Lire via NFC',
                           subtitle: 'Approchez votre\nappareil',
                           onTap: () => ThixIdentitySheets.showNfcScanSheet(context),
-                          iconBgColor: const Color(0xFFE0F2FE),
-                          iconColor: const Color(0xFF0369A1),
-                          arrowColor: const Color(0xFF10B981),
+                          iconBgColor: const Color(0xFFF0FDF4),
+                          iconColor: const Color(0xFF16A34A),
+                          arrowColor: const Color(0xFF16A34A),
                         ),
                       ),
                     ],
@@ -366,7 +336,8 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 20)),
-              // SECTION NOTIFICATIONS COMPACTE
+              
+              // NOTIFICATIONS CARD
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -404,7 +375,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // GRILLE DES SERVICES OPTIMISÉE EN 4 COLONNES ET DEUX LIGNES COMPACTES
+              
+              // ==================== CORRECTION STRICTE : NOS SERVICES ====================
+              // Remplacement du GridView par des Rows d'éléments calibrés pour un alignement au pixel près
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -429,98 +402,107 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       StreamBuilder<SectionBadgeCounts>(
                         stream: badgeCountsStream,
                         builder: (context, badgeSnap) {
                           final counts = badgeSnap.data ?? SectionBadgeCounts.zero;
-                          return GridView.count(
-                            crossAxisCount: 4,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 0.85,
+                          return Column(
                             children: [
-                              _ServiceCard(
-                                icon: Icons.person_add_alt_1_rounded,
-                                title: 'Demander un Compte',
-                                iconColor: const Color(0xFF3B82F6),
-                                onTap: () => _handleRequestAccount(context),
+                              // LIGNE 1
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _ServiceItem(
+                                    icon: Icons.person_add_alt_1_rounded,
+                                    title: 'Demander un\nCompte',
+                                    iconColor: const Color(0xFF3B82F6),
+                                    onTap: () => _handleRequestAccount(context),
+                                  ),
+                                  _ServiceItem(
+                                    icon: Icons.account_circle_rounded,
+                                    title: 'Mon\nCompte',
+                                    iconColor: const Color(0xFFA855F7),
+                                    onTap: () {
+                                      if (auth.isAuthenticated) {
+                                        final t = auth.currentUser?.accountType;
+                                        context.go(t == AccountType.enterprise ? AppRoutes.enterpriseDashboard : AppRoutes.userDashboard);
+                                      } else {
+                                        context.push(AppRoutes.login);
+                                      }
+                                    },
+                                  ),
+                                  _ServiceItem(
+                                    icon: Icons.school_rounded,
+                                    title: 'Formations\n',
+                                    iconColor: const Color(0xFF10B981),
+                                    badgeCount: counts.formations,
+                                    onTap: () async {
+                                      final me = auth.currentUser;
+                                      if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.formations);
+                                      if (context.mounted) context.push(AppRoutes.trainingHome);
+                                    },
+                                  ),
+                                  _ServiceItem(
+                                    icon: Icons.work_rounded,
+                                    title: 'Emplois\n',
+                                    iconColor: const Color(0xFFF59E0B),
+                                    badgeCount: counts.jobs,
+                                    onTap: () async {
+                                      final me = auth.currentUser;
+                                      if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.jobs);
+                                      if (context.mounted) context.push(AppRoutes.jobs);
+                                    },
+                                  ),
+                                ],
                               ),
-                              _ServiceCard(
-                                icon: Icons.account_circle_rounded,
-                                title: 'Mon Compte',
-                                iconColor: const Color(0 IsabellaColor = 0xFFA855F7),
-                                onTap: () {
-                                  if (auth.isAuthenticated) {
-                                    final t = auth.currentUser?.accountType;
-                                    context.go(t == AccountType.enterprise ? AppRoutes.enterpriseDashboard : AppRoutes.userDashboard);
-                                  } else {
-                                    context.push(AppRoutes.login);
-                                  }
-                                },
-                              ),
-                              _ServiceCard(
-                                icon: Icons.school_rounded,
-                                title: 'Formations',
-                                iconColor: const Color(0xFF10B981),
-                                badgeCount: counts.formations,
-                                onTap: () async {
-                                  final me = auth.currentUser;
-                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.formations);
-                                  if (context.mounted) context.push(AppRoutes.trainingHome);
-                                },
-                              ),
-                              _ServiceCard(
-                                icon: Icons.work_rounded,
-                                title: 'Emplois',
-                                iconColor: const Color(0xFFF59E0B),
-                                badgeCount: counts.jobs,
-                                onTap: () async {
-                                  final me = auth.currentUser;
-                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.jobs);
-                                  if (context.mounted) context.push(AppRoutes.jobs);
-                                },
-                              ),
-                              _ServiceCard(
-                                icon: Icons.newspaper_rounded,
-                                title: 'THIX INFO',
-                                iconColor: const Color(0xFFEC4899),
-                                badgeCount: counts.info,
-                                onTap: () async {
-                                  final me = auth.currentUser;
-                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.info);
-                                  if (context.mounted) AlertInfoSheet.show(context);
-                                },
-                              ),
-                              _ServiceCard(
-                                icon: Icons.lightbulb_rounded,
-                                title: 'Opportunités',
-                                iconColor: const Color(0xFF06B6D4),
-                                badgeCount: counts.opportunities,
-                                onTap: () async {
-                                  final me = auth.currentUser;
-                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.opportunities);
-                                  if (context.mounted) context.push(AppRoutes.opportunities);
-                                },
-                              ),
-                              _ServiceCard(
-                                icon: Icons.event_available_rounded,
-                                title: 'Événements',
-                                iconColor: const Color(0xFF6366F1),
-                                badgeCount: counts.events,
-                                onTap: () async {
-                                  final me = auth.currentUser;
-                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.events);
-                                  if (context.mounted) context.push(AppRoutes.events);
-                                },
-                              ),
-                              _ServiceCard(
-                                icon: Icons.groups_rounded,
-                                title: 'Réseau Pro',
-                                iconColor: const Color(0xFFF43F5E),
-                                onTap: () => context.push(AppRoutes.network),
+                              const SizedBox(height: 20),
+                              // LIGNE 2
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _ServiceItem(
+                                    icon: Icons.newspaper_rounded,
+                                    title: 'THIX\nINFO',
+                                    iconColor: const Color(0xFFEC4899),
+                                    badgeCount: counts.info,
+                                    onTap: () async {
+                                      final me = auth.currentUser;
+                                      if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.info);
+                                      if (context.mounted) AlertInfoSheet.show(context);
+                                    },
+                                  ),
+                                  _ServiceItem(
+                                    icon: Icons.lightbulb_rounded,
+                                    title: 'Opportunités\n',
+                                    iconColor: const Color(0xFF06B6D4),
+                                    badgeCount: counts.opportunities,
+                                    onTap: () async {
+                                      final me = auth.currentUser;
+                                      if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.opportunities);
+                                      if (context.mounted) context.push(AppRoutes.opportunities);
+                                    },
+                                  ),
+                                  _ServiceItem(
+                                    icon: Icons.event_available_rounded,
+                                    title: 'Événements\n',
+                                    iconColor: const Color(0xFF6366F1),
+                                    badgeCount: counts.events,
+                                    onTap: () async {
+                                      final me = auth.currentUser;
+                                      if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.events);
+                                      if (context.mounted) context.push(AppRoutes.events);
+                                    },
+                                  ),
+                                  _ServiceItem(
+                                    icon: Icons.groups_rounded,
+                                    title: 'Réseau\nPro',
+                                    iconColor: const Color(0xFFF43F5E),
+                                    onTap: () => context.push(AppRoutes.network),
+                                  ),
+                                ],
                               ),
                             ],
                           );
@@ -530,15 +512,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // BANNIÈRE DE MISSION JEUNESSE RECRÉÉE À L'IDENTIQUE
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
+              
+              // MISSION BANNER
               SliverToBoxAdapter(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+                      colors: [Color(0xFF0B1544), Color(0xFF1E3A8A)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -548,11 +531,11 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          cross classAppUser: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               'NOTRE MISSION',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: PremiumColors.accentGold, letterSpacing: 1),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24), letterSpacing: 1),
                             ),
                             const SizedBox(height: 6),
                             const Text(
@@ -568,12 +551,11 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Remplacement de l'illustration par un avatar groupé moderne
                       Container(
-                        width: 70,
-                        height: 70,
+                        width: 64,
+                        height: 64,
                         decoration: BoxDecoration(color: PremiumColors.white.withOpacity(0.1), shape: BoxShape.circle),
-                        child: const Icon(Icons.diversity_3_rounded, color: PremiumColors.white, size: 36),
+                        child: const Icon(Icons.diversity_3_rounded, color: PremiumColors.white, size: 30),
                       )
                     ],
                   ),
@@ -592,7 +574,8 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-      // NAVBAR FIXE DE STYLE FINTECH AVEC BOUTON CENTRAL AFFIRMÉ
+      
+      // FINTECH BOTTOM NAVBAR
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
@@ -608,12 +591,11 @@ class _HomePageState extends State<HomePage> {
             children: [
               _BottomNavItem(icon: Icons.home_rounded, label: 'Accueil', isSelected: true, onTap: () {}),
               _BottomNavItem(icon: Icons.grid_view_rounded, label: 'Services', isSelected: false, onTap: () {}),
-              // Bouton central de Scan QR / NFC combiné
               GestureDetector(
                 onTap: () => ThixIdentitySheets.showQrScanSheet(context),
                 child: Container(
-                  width: 52,
-                  height: 52,
+                  width: 54,
+                  height: 54,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]),
@@ -631,7 +613,87 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ==================== COMPOSANTS INTERNES RÉALIGNÉS ====================
+// ==================== WIDGETS AUXILIAIRES PARFAITEMENT ÉCHELONNÉS ====================
+
+// LE COMPOSANT REFAIT COMPACT EXACTEMENT COMME LA PHOTO
+class _ServiceItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color iconColor;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  const _ServiceItem({
+    required this.icon,
+    required this.title,
+    required this.iconColor,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Calcul de la largeur adaptative pour s'assurer que 4 colonnes entrent parfaitement avec de l'espace
+    final itemWidth = (MediaQuery.of(context).size.width - 40 - 30) / 4;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: itemWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Le carré parfait aux coins doux (comme sur la photo)
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16), // Coins arrondis parfaits du modèle
+                  ),
+                  child: Icon(icon, color: iconColor, size: 26),
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      child: Text(
+                        badgeCount > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Le texte centré, de petite taille, sans débordement
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12, 
+              fontWeight: FontWeight.w500, 
+              color: PremiumColors.textPrimary,
+              height: 1.2,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+          ),
+        ],
+      ),
+    ),
+  );
+}
+}
+
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -661,7 +723,7 @@ class _ActionCard extends StatelessWidget {
           color: PremiumColors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -677,7 +739,7 @@ class _ActionCard extends StatelessWidget {
                 ),
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(color: arrowColor.withOpacity(0.1), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: arrowColor.withOpacity(0.08), shape: BoxShape.circle),
                   child: Icon(Icons.arrow_forward_rounded, color: arrowColor, size: 14),
                 )
               ],
@@ -711,12 +773,12 @@ class _NotificationsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: PremiumColors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -729,7 +791,7 @@ class _NotificationsCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: !isAuthenticated
-                ? const Text('Connectez-vous pour vos notifications.', style: TextStyle(fontSize: 13, color: PremiumColors.textSecondary))
+                ? const Text('Connectez-vous pour voir vos notifications.', style: TextStyle(fontSize: 13, color: PremiumColors.textSecondary))
                 : StreamBuilder<List<Map<String, dynamic>>>(
                     stream: notifications,
                     builder: (context, snap) {
@@ -753,72 +815,6 @@ class _NotificationsCard extends StatelessWidget {
             onPressed: onSeeMore,
             icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: PremiumColors.textSecondary),
           )
-        ],
-      ),
-    );
-  }
-}
-
-class _ServiceCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color iconColor;
-  final VoidCallback onTap;
-  final int badgeCount;
-
-  const _ServiceCard({
-    required this.icon,
-    required this.title,
-    required this.iconColor,
-    required this.onTap,
-    this.badgeCount = 0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                height: 54,
-                width: 54,
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(icon, color: iconColor, size: 24),
-              ),
-              if (badgeCount > 0)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      badgeCount > 99 ? '99+' : '$badgeCount',
-                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: PremiumColors.textPrimary),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
         ],
       ),
     );
