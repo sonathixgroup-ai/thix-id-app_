@@ -21,13 +21,406 @@ import 'package:thix_id/l10n/locale_controller.dart';
 import '../../theme.dart';
 import '../../nav.dart';
 
-// ... (les classes PremiumGridCard, HomeQuickAccessGrid, _NotificationBadge,
-// RichGoldAction, HomeGoldBandAction, _LanguageTile, etc. sont conservées
-// telles quelles, mais elles ne sont plus utilisées dans la nouvelle UI.
-// Elles restent définies pour éviter des erreurs de compilation si elles sont
-// référencées ailleurs.)
+// ==================== ANCIENS WIDGETS (conservés pour compatibilité) ====================
 
-// Nouveau widget pour une carte de service dans la grille "Nos services"
+class PremiumGridCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool compact;
+  final bool filled;
+  final String? imageAssetPath;
+  final int badgeCount;
+
+  const PremiumGridCard({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.compact = false,
+    this.filled = false,
+    this.imageAssetPath,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.theme.brightness == Brightness.dark;
+    final goldBorder =
+        (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold)
+            .withValues(alpha: 0.55);
+    final fillGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        LightModeColors.accent,
+        LightModeColors.metalGold,
+        LightModeColors.metalGoldDeep.withValues(alpha: 0.85)
+      ],
+    );
+    return GestureDetector(
+      onTap: onTap,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final tight = (c.maxHeight.isFinite && c.maxHeight <= 98) || compact;
+          final iconSize = tight ? 16.0 : 22.0;
+          final chipSize = tight ? 32.0 : 42.0;
+          final gap = tight ? 6.0 : AppSpacing.sm;
+          final padding = tight ? const EdgeInsets.all(10) : AppSpacing.paddingMd;
+          final cs = context.theme.colorScheme;
+
+          final textStyle = (tight ? context.textStyles.labelSmall : context.textStyles.labelMedium)?.copyWith(
+            color: filled ? const Color(0xFF0A2F5C) : cs.onSurface,
+            fontWeight: FontWeight.w700,
+            height: 1.15,
+          );
+
+          final hasImage = (imageAssetPath ?? '').trim().isNotEmpty;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: filled ? null : cs.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+              border: Border.all(color: filled ? Colors.transparent : goldBorder),
+              gradient: filled ? fillGradient : null,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                if (hasImage && !filled)
+                  Positioned.fill(
+                    child: Image.asset(
+                      imageAssetPath!,
+                      fit: BoxFit.cover,
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.10),
+                      colorBlendMode: BlendMode.darken,
+                    ),
+                  ),
+                if (hasImage && !filled)
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: isDark ? 0.05 : 0.0),
+                            cs.surface.withValues(alpha: isDark ? 0.35 : 0.55),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: padding,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: chipSize,
+                        height: chipSize,
+                        decoration: BoxDecoration(
+                          color: (filled ? Colors.white : LightModeColors.accent).withValues(alpha: filled ? 0.35 : 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Icon(icon, color: filled ? const Color(0xFF0A2F5C) : LightModeColors.accent, size: iconSize),
+                      ),
+                      SizedBox(height: gap),
+                      Text(
+                        label,
+                        style: textStyle,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (badgeCount > 0) Positioned(top: 8, right: 8, child: _NotificationBadge(count: badgeCount)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class HomeQuickAccessGrid extends StatelessWidget {
+  final bool isTiny;
+  final SectionBadgeCounts counts;
+  final AuthController auth;
+  final NotificationCountersService counters;
+
+  const HomeQuickAccessGrid({
+    super.key,
+    required this.isTiny,
+    required this.counts,
+    required this.auth,
+    required this.counters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = isTiny ? AppSpacing.sm : AppSpacing.md;
+    final ratio = isTiny ? 1.05 : 1.12;
+
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: gap,
+      crossAxisSpacing: gap,
+      childAspectRatio: ratio,
+      children: [
+        PremiumGridCard(
+          icon: Icons.school_rounded,
+          label: 'Formations',
+          badgeCount: counts.formations,
+          onTap: () async {
+            final me = auth.currentUser;
+            if (me != null) await counters.markSectionSeen(uid: me.id, section: ThixSection.formations);
+            if (context.mounted) context.push(AppRoutes.trainingHome);
+          },
+        ),
+        PremiumGridCard(
+          icon: Icons.work_rounded,
+          label: 'Emploi',
+          badgeCount: counts.jobs,
+          onTap: () async {
+            final me = auth.currentUser;
+            if (me != null) await counters.markSectionSeen(uid: me.id, section: ThixSection.jobs);
+            if (context.mounted) context.push(AppRoutes.jobs);
+          },
+        ),
+        PremiumGridCard(
+          icon: Icons.newspaper_rounded,
+          label: 'THIX\nINFO',
+          filled: true,
+          badgeCount: counts.info,
+          onTap: () async {
+            final me = auth.currentUser;
+            if (me != null) await counters.markSectionSeen(uid: me.id, section: ThixSection.info);
+            if (context.mounted) AlertInfoSheet.show(context);
+          },
+        ),
+        PremiumGridCard(
+          icon: Icons.lightbulb_rounded,
+          label: 'Opportunités',
+          badgeCount: counts.opportunities,
+          imageAssetPath: 'assets/images/Office_team_grayscale_1775574009745.jpg',
+          onTap: () async {
+            final me = auth.currentUser;
+            if (me != null) await counters.markSectionSeen(uid: me.id, section: ThixSection.opportunities);
+            if (context.mounted) context.push(AppRoutes.opportunities);
+          },
+        ),
+        PremiumGridCard(
+          icon: Icons.event_available_rounded,
+          label: 'Événements',
+          badgeCount: counts.events,
+          imageAssetPath: 'assets/images/Senior_professional_man_grayscale_1775573975687.jpg',
+          onTap: () async {
+            final me = auth.currentUser;
+            if (me != null) await counters.markSectionSeen(uid: me.id, section: ThixSection.events);
+            if (context.mounted) context.push(AppRoutes.events);
+          },
+        ),
+        PremiumGridCard(
+          icon: Icons.groups_rounded,
+          label: 'Réseau Pro',
+          badgeCount: 0,
+          onTap: () => context.push(AppRoutes.network),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotificationBadge extends StatelessWidget {
+  final int count;
+  const _NotificationBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final label = count > 99 ? '99+' : '$count';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: LightModeColors.error,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: cs.surface, width: 2),
+      ),
+      child: Text(
+        label,
+        style: context.textStyles.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w900, height: 1.0),
+      ),
+    );
+  }
+}
+
+class RichGoldAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  const RichGoldAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 4),
+              )
+            ],
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                LightModeColors.accent,
+                LightModeColors.metalGold,
+                LightModeColors.metalGoldDeep
+              ],
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            margin: const EdgeInsets.all(1),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [LightModeColors.accent, LightModeColors.metalGold],
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: const Color(0xFF0A2F5C), size: 16),
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: context.textStyles.labelMedium?.copyWith(
+                    color: const Color(0xFF0A2F5C),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HomeGoldBandAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  const HomeGoldBandAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.theme.brightness == Brightness.dark;
+    final gold = (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold);
+    final goldDeep = (isDark ? DarkModeColors.metalGoldDeep : LightModeColors.metalGoldDeep);
+    final bg = isDark ? context.theme.colorScheme.surface : LightModeColors.primary;
+
+    return Expanded(
+      child: InkWell(
+        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.all(1.5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [gold, LightModeColors.metalGoldSoft, goldDeep],
+              stops: const [0, 0.55, 1],
+            ),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 14, offset: const Offset(0, 8))
+            ],
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.lg - 1.5),
+              color: bg,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, color: Colors.white, size: 18),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: context.textStyles.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w900, height: 1.05),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (badgeCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: _NotificationBadge(count: badgeCount),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== NOUVEAUX WIDGETS POUR LE DESIGN ====================
+
 class _ServiceGridCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -122,7 +515,6 @@ class _ServiceGridCard extends StatelessWidget {
   }
 }
 
-// Nouveau widget pour l'aperçu des notifications (similaire à l'ancien mais plus épuré)
 class _HomeNotificationsPreview extends StatelessWidget {
   final bool isAuthenticated;
   final Stream<List<Map<String, dynamic>>>? notifications;
@@ -251,6 +643,230 @@ class _HomeNotificationsPreview extends StatelessWidget {
     );
   }
 }
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(colors: [LightModeColors.accent, LightModeColors.metalGold]),
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(25), blurRadius: 6, offset: const Offset(0, 4))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: const Color(0xFF0A2F5C), size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(color: Color(0xFF0A2F5C), fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageTile extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LanguageTile({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      highlightColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: selected ? LightModeColors.metalGold : cs.outlineVariant.withAlpha(102)),
+          color: selected ? LightModeColors.metalGold.withAlpha(20) : cs.surface,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: selected ? FontWeight.w900 : FontWeight.w700),
+              ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: selected
+                  ? Icon(Icons.check_circle_rounded, key: const ValueKey('on'), color: LightModeColors.metalGold)
+                  : Icon(Icons.circle_outlined, key: const ValueKey('off'), color: cs.onSurface.withAlpha(89)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _AccountRequestChoice { personal, enterprise }
+
+class AccountRequestSheet extends StatelessWidget {
+  const AccountRequestSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldBorder = (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold).withAlpha(140);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+        child: Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: goldBorder),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withAlpha(51), blurRadius: 30, offset: const Offset(0, 18))
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 44,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                decoration: BoxDecoration(
+                    color: cs.onSurface.withAlpha(30),
+                    borderRadius: BorderRadius.circular(999)),
+              ),
+              Text('Demande de compte',
+                  style: context.textStyles.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800, color: cs.onSurface)),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Choisissez le profil à créer. Vous pourrez compléter les informations et finaliser le dossier ensuite.',
+                style: context.textStyles.bodyMedium?.copyWith(
+                    color: cs.onSurface.withAlpha(199), height: 1.5),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              _AccountChoiceTile(
+                icon: Icons.person_rounded,
+                title: 'Compte Personnel',
+                subtitle: 'Citoyen / résident / étudiant',
+                onTap: () => context.pop(_AccountRequestChoice.personal),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _AccountChoiceTile(
+                icon: Icons.domain_rounded,
+                title: 'Compte Entreprise',
+                subtitle: 'Institution, société, ONG, établissement',
+                onTap: () => context.pop(_AccountRequestChoice.enterprise),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Align(
+                alignment: Alignment.center,
+                child: TextButton(
+                  onPressed: () => context.pop(),
+                  style: TextButton.styleFrom(
+                      foregroundColor: cs.onSurface.withAlpha(204)),
+                  child: const Text('Annuler'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountChoiceTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _AccountChoiceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldBorder = (isDark ? DarkModeColors.metalGold : LightModeColors.metalGold).withAlpha(115);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withAlpha(89),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: goldBorder),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: LightModeColors.accent.withAlpha(30),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: LightModeColors.accent, size: 22),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: context.textStyles.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800, color: cs.onSurface)),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: context.textStyles.bodySmall?.copyWith(
+                        color: cs.onSurface.withAlpha(184),
+                        height: 1.35),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Icon(Icons.arrow_forward_rounded,
+                color: cs.onSurface.withAlpha(140), size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== PAGE HOME PRINCIPALE ====================
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -438,11 +1054,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Méthode pour gérer le tap sur "Services" dans la bottom bar
   void _onServicesTap() {
-    // Fait défiler jusqu'à la section "Nos services"
-    // Pour simplifier, on peut afficher un message ou ne rien faire.
-    // Conforme au design sans altérer les fonctionnalités.
+    // Fait défiler jusqu'à la section "Nos services" – pour l'instant un snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Section Services (fonctionnalité à venir)'), duration: Duration(seconds: 1)),
     );
@@ -483,20 +1096,18 @@ class _HomePageState extends State<HomePage> {
     final w = MediaQuery.sizeOf(context).width;
     final isCompact = w < 380;
 
-    // Calcul de l'espace réservé pour les FABs (Urgence + Chat) en bas
     const double fabSpace = 80.0;
 
     return Scaffold(
       backgroundColor: isDark ? context.theme.scaffoldBackgroundColor : LightModeColors.surface,
       body: Stack(
         children: [
-          // Contenu principal scrollable
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // === EN-TÊTE THIX ID (bleu dégradé) ===
+                // En-tête THIX ID
                 Stack(
                   alignment: Alignment.topCenter,
                   children: [
@@ -567,13 +1178,11 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          // Message "Bienvenue ! Que voulez-vous faire aujourd'hui ?" (comme sur la photo)
                           const Text(
                             'Bienvenue ! Que voulez-vous faire aujourd’hui ?',
                             style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 16),
-                          // Barre de recherche + bouton Vérifier
                           Container(
                             width: w * 0.9,
                             height: 52,
@@ -611,9 +1220,9 @@ class _HomePageState extends State<HomePage> {
                                       gradient: const LinearGradient(colors: [LightModeColors.accent, LightModeColors.metalGold]),
                                     ),
                                     alignment: Alignment.center,
-                                    child: Text(
+                                    child: const Text(
                                       'Vérifier',
-                                      style: const TextStyle(color: Color(0xFF0A2F5C), fontWeight: FontWeight.w800, fontSize: 14),
+                                      style: TextStyle(color: Color(0xFF0A2F5C), fontWeight: FontWeight.w800, fontSize: 14),
                                     ),
                                   ),
                                 ),
@@ -627,7 +1236,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
 
-                // === ACTIONS RAPIDES : Scanner QR & Lire via NFC ===
+                // Actions rapides : Scanner QR & Lire via NFC
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -652,7 +1261,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 24),
 
-                // === PANEL NOTIFICATIONS ===
+                // Notifications
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _HomeNotificationsPreview(
@@ -708,7 +1317,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 28),
 
-                // === NOS SERVICES (grille 8 cartes) ===
+                // Nos services (grille 8 cartes)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
@@ -722,9 +1331,7 @@ class _HomePageState extends State<HomePage> {
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF0A2F5C)),
                           ),
                           TextButton(
-                            onPressed: () {
-                              // Option "Tout voir" si besoin, ici on peut juste défiler
-                            },
+                            onPressed: () {},
                             child: const Text('Tout voir >', style: TextStyle(color: LightModeColors.accent, fontWeight: FontWeight.w700)),
                           ),
                         ],
@@ -750,7 +1357,6 @@ class _HomePageState extends State<HomePage> {
                               _ServiceGridCard(
                                 icon: Icons.account_circle_rounded,
                                 label: 'Mon Compte',
-                                badgeCount: 0, // on peut éventuellement afficher le badge des notifs non lues
                                 onTap: () {
                                   if (auth.isAuthenticated) {
                                     final t = auth.currentUser?.accountType;
@@ -824,7 +1430,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 32),
 
-                // === NOTRE MISSION ===
+                // Notre mission
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   padding: const EdgeInsets.all(20),
@@ -857,17 +1463,18 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: fabSpace + 20), // Espace pour les FABs + bottom bar
+                SizedBox(height: fabSpace + 20),
               ],
             ),
           ),
 
-          // === FLOATING ACTION BUTTONS (conservés) ===
+          // FAB Urgence
           Positioned(
             bottom: safeBottom + 16,
             left: 24,
             child: const EmergencyFab(),
           ),
+          // FAB Chat
           Positioned(
             bottom: safeBottom + 16,
             right: 24,
@@ -894,7 +1501,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // Indicateur de chargement pendant la recherche
           if (_searching)
             Positioned.fill(
               child: Container(
@@ -905,8 +1511,6 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-
-      // === BARRE DE NAVIGATION EN BAS (Accueil, Services, Messages, Profil) ===
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: isDark ? Colors.grey[900] : Colors.white,
@@ -916,7 +1520,6 @@ class _HomePageState extends State<HomePage> {
         onTap: (index) {
           switch (index) {
             case 0:
-              // Déjà sur l'accueil, ne rien faire (ou remonter en haut)
               break;
             case 1:
               _onServicesTap();
@@ -940,42 +1543,8 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Petit widget pour les actions rapides (Scanner / NFC)
-class _QuickActionCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+// ==================== EXTENSION THEME HELPER ====================
 
-  const _QuickActionCard({required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(colors: [LightModeColors.accent, LightModeColors.metalGold]),
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(25), blurRadius: 6, offset: const Offset(0, 4))],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: const Color(0xFF0A2F5C), size: 20),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(color: Color(0xFF0A2F5C), fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+extension ThemeHelper on BuildContext {
+  ThemeData get theme => Theme.of(this);
 }
-
-// Le reste des classes (_LanguageTile, _AccountRequestChoice, AccountRequestSheet, _AccountChoiceTile, etc.) sont conservées sans modification.
-// Elles ont été omises ici pour la lisibilité, mais doivent rester présentes dans le fichier final.
-// (Elles sont identiques à celles du code original)
