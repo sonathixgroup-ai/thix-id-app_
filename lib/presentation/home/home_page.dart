@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +13,7 @@ import 'package:thix_id/presentation/common/notifications_sheet.dart';
 import 'package:thix_id/services/notification_counters_service.dart';
 import 'package:thix_id/presentation/common/thix_identity_sheets.dart';
 import 'package:thix_id/services/firestore_user_service.dart';
+import 'package:thix_id/services/access_request_service.dart';
 import 'package:thix_id/services/notification_service.dart';
 import 'package:thix_id/services/thix_id_service.dart';
 import 'package:thix_id/l10n/app_localizations.dart';
@@ -17,7 +21,7 @@ import 'package:thix_id/l10n/locale_controller.dart';
 import '../../theme.dart';
 import '../../nav.dart';
 
-// Palette de couleurs premium
+// ==================== PALETTE DE COULEURS PREMIUM ====================
 class PremiumColors {
   static const Color primaryDark = Color(0xFF071B8C);
   static const Color primaryElectric = Color(0xFF2E5BFF);
@@ -30,7 +34,7 @@ class PremiumColors {
   static const Color textSecondary = Color(0xFF6C6C7A);
 }
 
-// Page d'accueil complète
+// ==================== PAGE HOME PRINCIPALE ====================
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -52,6 +56,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // ==================== MÉTHODES ====================
   Future<void> _showLanguagePicker() async {
     final localeCtrl = context.read<LocaleController>();
     final currentCode = localeCtrl.locale?.languageCode;
@@ -240,6 +245,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // ==================== BUILD ====================
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
@@ -251,20 +257,19 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: PremiumColors.backgroundLight,
       body: Stack(
         children: [
-          // Contenu principal scrollable
           CustomScrollView(
             slivers: [
-              // Header bleu avec gradient + décors
+              // HEADER GRADIENT BLEU
               SliverToBoxAdapter(
                 child: Container(
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [PremiumColors.primaryDark, PremiumColors.primaryElectric],
                     ),
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(32),
                       bottomRight: Radius.circular(32),
                     ),
@@ -320,7 +325,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                      // Fingerprint discret
                       Positioned(
                         bottom: -30,
                         right: -20,
@@ -335,7 +339,6 @@ class _HomePageState extends State<HomePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Ligne logo + avatar
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -362,7 +365,6 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ],
                                 ),
-                                // Avatar rond (profil)
                                 GestureDetector(
                                   onTap: _onProfileTap,
                                   child: Container(
@@ -381,7 +383,6 @@ class _HomePageState extends State<HomePage> {
                               ],
                             ),
                             const SizedBox(height: 32),
-                            // Zone Hero
                             const Text(
                               'Bienvenue !',
                               style: TextStyle(
@@ -401,7 +402,6 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            // Barre de recherche flottante
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -462,9 +462,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              // Espacement
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // Cartes actions : Scanner QR & Lire via NFC
+              // CARTES SCANNER / NFC
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -496,7 +495,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // Section Notifications
+              // NOTIFICATIONS
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -553,7 +552,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
-              // Section Nos services
+              // NOS SERVICES (grille 2x4)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -597,8 +596,8 @@ class _HomePageState extends State<HomePage> {
                                 icon: Icons.person_add_alt_1_rounded,
                                 title: 'Demander un Compte',
                                 onTap: () => _handleRequestAccount(context),
-                                badgeCount: 0,
                                 gradient: const [PremiumColors.primaryElectric, PremiumColors.primaryDark],
+                                iconColor: Colors.white,
                               ),
                               _ServiceCard(
                                 icon: Icons.account_circle_rounded,
@@ -682,7 +681,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
-              // Section Mission
+              // MISSION
               SliverToBoxAdapter(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -737,7 +736,6 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                      // Illustration simplifiée (jeunesse africaine)
                       Container(
                         width: 80,
                         height: 80,
@@ -755,15 +753,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)), // Espace pour bottom nav
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
-          // Boutons flottants (urgence + chat)
+          // FAB URGENCE
           Positioned(
             bottom: 80,
             left: 20,
             child: const EmergencyFab(),
           ),
+          // FAB CHAT
           Positioned(
             bottom: 80,
             right: 20,
@@ -789,7 +788,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Indicateur de recherche
           if (_searching)
             Positioned.fill(
               child: Container(
@@ -800,7 +798,6 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-      // Bottom Navigation Bar flottante style iOS
       bottomNavigationBar: Container(
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -830,7 +827,7 @@ class _HomePageState extends State<HomePage> {
                 case 0:
                   break;
                 case 1:
-                  // Services : déjà visible en scroll
+                  // Services – déjà visible
                   break;
                 case 2:
                   _onMessagesTap();
@@ -853,7 +850,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Cartes d'action (Scanner/Lire NFC)
+// ==================== WIDGETS INTERNES ====================
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -867,8 +864,8 @@ class _ActionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.gradientColors = const [PremiumColors.backgroundLight, PremiumColors.backgroundLight],
-    this.iconColor = PremiumColors.primaryElectric,
+    required this.gradientColors,
+    required this.iconColor,
   });
 
   @override
@@ -923,7 +920,6 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-// Carte Notifications
 class _NotificationsCard extends StatelessWidget {
   final bool isAuthenticated;
   final Stream<List<Map<String, dynamic>>>? notifications;
@@ -1045,7 +1041,6 @@ class _NotificationsCard extends StatelessWidget {
   }
 }
 
-// Carte Service (grille 2x4)
 class _ServiceCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -1127,7 +1122,6 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
-// Language tile (inchangé)
 class _LanguageTile extends StatelessWidget {
   final String label;
   final bool selected;
@@ -1274,4 +1268,9 @@ class _AccountChoiceTile extends StatelessWidget {
       ),
     );
   }
+}
+
+// ==================== EXTENSION THEME HELPER (optionnelle) ====================
+extension ThemeHelper on BuildContext {
+  ThemeData get theme => Theme.of(this);
 }
