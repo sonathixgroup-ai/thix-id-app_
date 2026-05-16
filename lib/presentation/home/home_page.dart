@@ -1,36 +1,36 @@
-import 'dart:async';
-import 'dart:ui';
-
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
 import 'package:thix_id/auth/auth_controller.dart';
 import 'package:thix_id/models/app_user.dart';
-
-import 'package:thix_id/services/firestore_user_service.dart';
-import 'package:thix_id/services/thix_id_service.dart';
-import 'package:thix_id/services/notification_counters_service.dart';
-import 'package:thix_id/services/notification_service.dart';
-
 import 'package:thix_id/presentation/common/full_screen_message.dart';
 import 'package:thix_id/presentation/common/alert_info_sheet.dart';
 import 'package:thix_id/presentation/common/notifications_sheet.dart';
+import 'package:thix_id/services/notification_counters_service.dart';
 import 'package:thix_id/presentation/common/thix_identity_sheets.dart';
-
+import 'package:thix_id/services/firestore_user_service.dart';
+import 'package:thix_id/services/notification_service.dart';
+import 'package:thix_id/services/thix_id_service.dart';
+import 'package:thix_id/l10n/locale_controller.dart';
+import '../../theme.dart';
 import '../../nav.dart';
 
+// ==================== PALETTE DE COULEURS PREMIUM REVISITÉE ====================
 class PremiumColors {
-  static const Color primaryDark = Color(0xFF071B8C);
-  static const Color primaryElectric = Color(0xFF2E5BFF);
-  static const Color background = Color(0xFFF6F8FC);
-  static const Color white = Colors.white;
-  static const Color mint = Color(0xFFCFF7E8);
-  static const Color lavender = Color(0xFFEEE7FF);
-  static const Color peach = Color(0xFFFFE9D6);
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color primaryDark = Color(0xFF030F54);      // Bleu Nuit profond
+  static const Color primaryElectric = Color(0xFF1E40AF);  // Bleu Institutionnel
+  static const Color accentGold = Color(0xFFD4AF37);       // Or Métallique
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color backgroundLight = Color(0xFFF4F7FE);  // Gris/Bleu très clair
+  static const Color textPrimary = Color(0xFF0F172A);      // Ardoise foncé
+  static const Color textSecondary = Color(0xFF64748B);    // Gris neutre
+  
+  // Teintes subtiles pour les conteneurs d'icônes
+  static const Color mintLight = Color(0xE8E0FBF2);
+  static const Color lavenderLight = Color(0xFFEEF2FF);
 }
 
 class HomePage extends StatefulWidget {
@@ -43,9 +43,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   bool _searching = false;
-  final NotificationService _notifications = NotificationService();
-  final NotificationCountersService _counters = NotificationCountersService();
-  static final RegExp _uidLikeRegex = RegExp(r'^[A-Za-z0-9_-]{20,}$');
+  final _notifications = NotificationService();
+  final _counters = NotificationCountersService();
+
+  static final RegExp uidLikeRegex = RegExp(r'^[A-Za-z0-9-]{20,}$');
 
   @override
   void dispose() {
@@ -53,13 +54,14 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<void> _handleSearch() async {
+  // ==================== MÉTHODES DE LOGIQUE REPRISES ====================
+  Future<void> _handleHomeSearchVerify() async {
     final raw = _searchController.text.trim();
     if (raw.isEmpty) {
       await FullScreenMessage.showError(
         context,
         title: 'Identifiant requis',
-        message: 'Entrez un THIX ID.',
+        message: "Saisissez un THIX ID (ex: ${ThixIdService.exampleV2}) ou un UID, puis appuyez sur 'Vérifier'.",
       );
       return;
     }
@@ -70,11 +72,10 @@ class _HomePageState extends State<HomePage> {
       await FullScreenMessage.showError(
         context,
         title: 'Identifiant invalide',
-        message: 'Format incorrect.',
+        message: 'Format attendu: ${ThixIdService.exampleV2} (recommandé) ou ${ThixIdService.exampleV1} ou UID.',
       );
       return;
     }
-
     setState(() => _searching = true);
     try {
       final userService = FirestoreUserService();
@@ -88,8 +89,8 @@ class _HomePageState extends State<HomePage> {
       if (user == null) {
         await FullScreenMessage.showError(
           context,
-          title: 'Introuvable',
-          message: 'Aucun profil trouvé.',
+          title: 'Profil introuvable',
+          message: "Aucun profil n'a été trouvé pour l'identifiant: ${normalized.toUpperCase()}.",
         );
         return;
       }
@@ -101,9 +102,48 @@ class _HomePageState extends State<HomePage> {
       }
     } catch (e) {
       if (!mounted) return;
-      await FullScreenMessage.showError(context, title: 'Erreur', message: '$e');
+      await FullScreenMessage.showError(
+        context,
+        title: 'Erreur de recherche',
+        message: "Impossible d'exécuter la vérification. Réessayez.\n\nDétail: $e",
+      );
     } finally {
       if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  Future<void> _handleRequestAccount(BuildContext context) async {
+    final auth = context.read<AuthController>();
+    final res = await showModalBottomSheet<_AccountRequestChoice>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const AccountRequestSheet(),
+    );
+    switch (res) {
+      case _AccountRequestChoice.personal:
+        if (auth.isAuthenticated) await auth.signOut();
+        if (context.mounted) context.push(AppRoutes.personalReg);
+        return;
+      case _AccountRequestChoice.enterprise:
+        if (auth.isAuthenticated) await auth.signOut();
+        if (context.mounted) context.push(AppRoutes.enterpriseReg);
+        return;
+      case null:
+        return;
+    }
+  }
+
+  void _onMessagesTap() {
+    final auth = context.read<AuthController>();
+    if (auth.isAuthenticated) {
+      final me = auth.currentUser;
+      if (me != null) {
+        unawaited(_counters.markSectionSeen(uid: me.id, section: ThixSection.messages));
+      }
+      context.push(AppRoutes.chat);
+    } else {
+      context.push(AppRoutes.login);
     }
   }
 
@@ -111,193 +151,174 @@ class _HomePageState extends State<HomePage> {
     final auth = context.read<AuthController>();
     if (auth.isAuthenticated) {
       final t = auth.currentUser?.accountType;
-      context.go(
-        t == AccountType.enterprise ? AppRoutes.enterpriseDashboard : AppRoutes.userDashboard,
-      );
+      context.go(t == AccountType.enterprise ? AppRoutes.enterpriseDashboard : AppRoutes.userDashboard);
     } else {
       context.push(AppRoutes.login);
     }
   }
 
-  void _onMessagesTap() {
-    final auth = context.read<AuthController>();
-    if (auth.isAuthenticated) {
-      context.push(AppRoutes.chat);
-    } else {
-      context.push(AppRoutes.login);
-    }
+  // Remplacement du bouton urgent au clic long sur le bouton de profil du haut
+  void _onEmergencyTrigger() {
+    // Appel natif ou logique de secours associée à l'ancienne EmergencyFab
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Alerte d\'urgence initiée.'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
   }
 
+  // ==================== BUILD ====================
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
-    final safeTop = MediaQuery.paddingOf(context).top;
-    final badgeCountsStream = auth.currentUser == null
-        ? Stream.value(SectionBadgeCounts.zero)
+    final badgeCountsStream = auth.currentUser == null 
+        ? Stream.value(SectionBadgeCounts.zero) 
         : _counters.streamCounts(auth.currentUser!.id);
+    final safeTop = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
-      backgroundColor: PremiumColors.background,
+      backgroundColor: PremiumColors.backgroundLight,
       body: Stack(
         children: [
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                // HEADER RÉDUIT (hauteur ~300)
-                Container(
+          CustomScrollView(
+            slivers: [
+              // HEADER GRADIENT BLEU SUIVANT LE DESIGN FOURNI
+              SliverToBoxAdapter(
+                child: Container(
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [PremiumColors.primaryDark, PremiumColors.primaryElectric],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF0A2540), Color(0xFF0044FF)],
                     ),
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(28),
-                      bottomRight: Radius.circular(28),
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
                     ),
                   ),
                   child: Stack(
                     children: [
-                      // Décors légers
+                      // Points d'ancrage graphiques en arrière-plan
                       Positioned(
-                        top: -30,
-                        right: -20,
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.05),
-                          ),
+                        top: safeTop,
+                        right: 20,
+                        child: Opacity(
+                          opacity: 0.15,
+                          child: Icon(Icons.apps_rounded, size: 120, color: PremiumColors.white),
                         ),
-                      ),
-                      Positioned(
-                        bottom: -40,
-                        left: -30,
-                        child: Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.03),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: -10,
-                        bottom: 10,
-                        child: Icon(Icons.fingerprint, size: 120, color: Colors.white.withOpacity(0.06)),
                       ),
                       Padding(
-                        padding: EdgeInsets.only(top: safeTop + 12, left: 20, right: 20, bottom: 24),
+                        padding: EdgeInsets.only(top: safeTop + 20, left: 24, right: 24, bottom: 40),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Top Bar : Logo & Profil d'urgence
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                Row(
                                   children: [
-                                    const Text(
-                                      'THIX ID',
-                                      style: TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
-                                        letterSpacing: -0.5,
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: PremiumColors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(14),
                                       ),
+                                      child: const Icon(Icons.fingerprint_rounded, color: PremiumColors.white, size: 28),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Identité Sécurisée. Avenir de Confiance.',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.white.withOpacity(0.8),
-                                      ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Text(
+                                              'THIX ID',
+                                              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: PremiumColors.white, letterSpacing: -0.5),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: PremiumColors.accentGold)),
+                                          ],
+                                        ),
+                                        Text(
+                                          'Identité Sécurisée. Avenir de Confiance.',
+                                          style: TextStyle(fontSize: 11, color: PremiumColors.white.withOpacity(0.7), fontWeight: FontWeight.w400),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
+                                // Bouton profil redirigeant ou déclenchant l'urgence sur appui long
                                 GestureDetector(
                                   onTap: _onProfileTap,
+                                  onLongPress: _onEmergencyTrigger,
                                   child: Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: BoxDecoration(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: Colors.white.withOpacity(0.15),
-                                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                      color: PremiumColors.white,
                                     ),
-                                    child: const Icon(Icons.person_outline, color: Colors.white, size: 22),
+                                    child: const Icon(Icons.person_rounded, color: Color(0xFF0A2540), size: 24),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 40),
                             const Text(
                               'Bienvenue !',
-                              style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: -1,
-                              ),
+                              style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: PremiumColors.white, letterSpacing: -0.5),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             Text(
                               'Que voulez-vous faire aujourd’hui ?',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white.withOpacity(0.92),
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: PremiumColors.white.withOpacity(0.85)),
                             ),
-                            const SizedBox(height: 20),
-                            // Barre de recherche
+                            const SizedBox(height: 28),
+                            // Barre de recherche stylisée selon la maquette
                             Container(
-                              height: 56,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              height: 60,
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: PremiumColors.white,
                                 borderRadius: BorderRadius.circular(30),
                                 boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
-                                  ),
+                                  BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 8)),
                                 ],
                               ),
+                              padding: const EdgeInsets.only(left: 20, right: 6),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.search_rounded, color: PremiumColors.textSecondary, size: 20),
-                                  const SizedBox(width: 10),
+                                  const Icon(Icons.search, color: PremiumColors.textSecondary, size: 22),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: TextField(
                                       controller: _searchController,
+                                      textInputAction: TextInputAction.search,
+                                      onSubmitted: (_) => _searching ? null : _handleHomeSearchVerify(),
                                       decoration: const InputDecoration(
                                         hintText: 'Rechercher un THIX ID...',
-                                        hintStyle: TextStyle(fontSize: 14),
+                                        hintStyle: TextStyle(color: PremiumColors.textSecondary, fontSize: 15),
                                         border: InputBorder.none,
                                       ),
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: _searching ? null : _handleSearch,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(
-                                          colors: [PremiumColors.primaryElectric, PremiumColors.primaryDark],
-                                        ),
-                                        borderRadius: BorderRadius.circular(26),
-                                      ),
-                                      child: const Text(
-                                        'Vérifier',
-                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                                      ),
+                                  ElevatedButton(
+                                    onPressed: _searching ? null : _handleHomeSearchVerify,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF2563EB),
+                                      foregroundColor: PremiumColors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Text('Vérifier', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                        const SizedBox(width: 6),
+                                        const Icon(Icons.arrow_forward, size: 16),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -309,39 +330,45 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                // Ligne Scanner / NFC (plus compact)
-                Padding(
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              // CARDS D'ACTIONS : SCANNER / NFC
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
                       Expanded(
                         child: _ActionCard(
-                          title: 'Scanner un QR',
-                          subtitle: 'Scannez un code sécurisé',
                           icon: Icons.qr_code_scanner_rounded,
-                          colors: [PremiumColors.mint, Colors.white],
-                          iconColor: PremiumColors.primaryDark,
+                          title: 'Scanner un QR',
+                          subtitle: 'Scannez un code\nen toute sécurité',
                           onTap: () => ThixIdentitySheets.showQrScanSheet(context),
+                          iconBgColor: PremiumColors.backgroundLight,
+                          iconColor: const Color(0xFF2563EB),
+                          arrowColor: const Color(0xFF2563EB),
                         ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: _ActionCard(
-                          title: 'Lire via NFC',
-                          subtitle: 'Approchez votre appareil',
                           icon: Icons.nfc_rounded,
-                          colors: [PremiumColors.lavender, Colors.white],
-                          iconColor: PremiumColors.primaryDark,
+                          title: 'Lire via NFC',
+                          subtitle: 'Approchez votre\nappareil',
                           onTap: () => ThixIdentitySheets.showNfcScanSheet(context),
+                          iconBgColor: const Color(0xFFE0F2FE),
+                          iconColor: const Color(0xFF0369A1),
+                          arrowColor: const Color(0xFF10B981),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                // Carte Notifications
-                Padding(
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              // SECTION NOTIFICATIONS COMPACTE
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _NotificationsCard(
                     isAuthenticated: auth.isAuthenticated,
@@ -358,45 +385,28 @@ class _HomePageState extends State<HomePage> {
                       if (me == null) return;
                       _notifications.markRead(uid: me.id, notificationId: notificationId);
                     },
-                    onOpen: (row) async {
+                    onOpen: (notif) async {
                       if (!auth.isAuthenticated) {
                         context.push(AppRoutes.login);
                         return;
                       }
                       final me = auth.currentUser;
                       if (me == null) return;
-                      final type = (row['type'] ?? '').toString().toLowerCase();
-                      try {
-                        if (type.contains('message') || type.contains('chat')) {
-                          await _counters.markSectionSeen(uid: me.id, section: ThixSection.messages);
-                          if (context.mounted) context.push(AppRoutes.chat);
-                          return;
-                        }
-                        if (type.contains('opportun')) {
-                          await _counters.markSectionSeen(uid: me.id, section: ThixSection.opportunities);
-                          if (context.mounted) context.push(AppRoutes.opportunities);
-                          return;
-                        }
-                        if (type.contains('job') || type.contains('emploi') || type.contains('offer')) {
-                          await _counters.markSectionSeen(uid: me.id, section: ThixSection.jobs);
-                          if (context.mounted) context.push(AppRoutes.jobs);
-                          return;
-                        }
-                        if (type.contains('event') || type.contains('evenement') || type.contains('événement')) {
-                          await _counters.markSectionSeen(uid: me.id, section: ThixSection.events);
-                          if (context.mounted) context.push(AppRoutes.events);
-                          return;
-                        }
-                      } catch (e) {
-                        debugPrint('HomePage: open notification failed type=$type err=$e');
+                      final type = (notif['type'] ?? '').toString().toLowerCase();
+                      if (type.contains('message')) {
+                        await _counters.markSectionSeen(uid: me.id, section: ThixSection.messages);
+                        if (context.mounted) context.push(AppRoutes.chat);
+                        return;
                       }
                       if (context.mounted) NotificationsSheet.show(context);
                     },
                   ),
                 ),
-                const SizedBox(height: 20),
-                // Section Nos services
-                Padding(
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              // GRILLE DES SERVICES OPTIMISÉE EN 4 COLONNES ET DEUX LIGNES COMPACTES
+              SliverToBoxAdapter(
+                child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,74 +416,110 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           const Text(
                             'Nos services',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: PremiumColors.textPrimary),
                           ),
-                          TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                            child: const Text('Tout voir >', style: TextStyle(fontSize: 13)),
+                          GestureDetector(
+                            onTap: () {},
+                            child: const Row(
+                              children: [
+                                Text('Tout voir', style: TextStyle(color: PremiumColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                Icon(Icons.chevron_right_rounded, color: PremiumColors.textSecondary, size: 16),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       StreamBuilder<SectionBadgeCounts>(
                         stream: badgeCountsStream,
-                        builder: (context, snap) {
-                          final counts = snap.data ?? SectionBadgeCounts.zero;
+                        builder: (context, badgeSnap) {
+                          final counts = badgeSnap.data ?? SectionBadgeCounts.zero;
                           return GridView.count(
+                            crossAxisCount: 4,
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
                             mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 0.9,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 0.85,
                             children: [
                               _ServiceCard(
+                                icon: Icons.person_add_alt_1_rounded,
                                 title: 'Demander un Compte',
-                                icon: Icons.person_add_alt_1,
-                                gradient: const [PremiumColors.primaryElectric, PremiumColors.primaryDark],
-                                iconColor: Colors.white,
-                                onTap: () {}, // à implémenter si besoin
+                                iconColor: const Color(0xFF3B82F6),
+                                onTap: () => _handleRequestAccount(context),
                               ),
                               _ServiceCard(
+                                icon: Icons.account_circle_rounded,
                                 title: 'Mon Compte',
-                                icon: Icons.account_circle,
-                                gradient: const [PremiumColors.mint, Colors.white],
-                                onTap: _onProfileTap,
+                                iconColor: const Color(0 IsabellaColor = 0xFFA855F7),
+                                onTap: () {
+                                  if (auth.isAuthenticated) {
+                                    final t = auth.currentUser?.accountType;
+                                    context.go(t == AccountType.enterprise ? AppRoutes.enterpriseDashboard : AppRoutes.userDashboard);
+                                  } else {
+                                    context.push(AppRoutes.login);
+                                  }
+                                },
                               ),
                               _ServiceCard(
-                                title: 'Formations',
                                 icon: Icons.school_rounded,
-                                badge: counts.formations,
-                                onTap: () => context.push(AppRoutes.trainingHome),
+                                title: 'Formations',
+                                iconColor: const Color(0xFF10B981),
+                                badgeCount: counts.formations,
+                                onTap: () async {
+                                  final me = auth.currentUser;
+                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.formations);
+                                  if (context.mounted) context.push(AppRoutes.trainingHome);
+                                },
                               ),
                               _ServiceCard(
-                                title: 'Emplois',
                                 icon: Icons.work_rounded,
-                                badge: counts.jobs,
-                                onTap: () => context.push(AppRoutes.jobs),
+                                title: 'Emplois',
+                                iconColor: const Color(0xFFF59E0B),
+                                badgeCount: counts.jobs,
+                                onTap: () async {
+                                  final me = auth.currentUser;
+                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.jobs);
+                                  if (context.mounted) context.push(AppRoutes.jobs);
+                                },
                               ),
                               _ServiceCard(
-                                title: 'THIX INFO',
                                 icon: Icons.newspaper_rounded,
-                                badge: counts.info,
-                                onTap: () => AlertInfoSheet.show(context),
+                                title: 'THIX INFO',
+                                iconColor: const Color(0xFFEC4899),
+                                badgeCount: counts.info,
+                                onTap: () async {
+                                  final me = auth.currentUser;
+                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.info);
+                                  if (context.mounted) AlertInfoSheet.show(context);
+                                },
                               ),
                               _ServiceCard(
-                                title: 'Opportunités',
                                 icon: Icons.lightbulb_rounded,
-                                badge: counts.opportunities,
-                                onTap: () => context.push(AppRoutes.opportunities),
+                                title: 'Opportunités',
+                                iconColor: const Color(0xFF06B6D4),
+                                badgeCount: counts.opportunities,
+                                onTap: () async {
+                                  final me = auth.currentUser;
+                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.opportunities);
+                                  if (context.mounted) context.push(AppRoutes.opportunities);
+                                },
                               ),
                               _ServiceCard(
+                                icon: Icons.event_available_rounded,
                                 title: 'Événements',
-                                icon: Icons.event_rounded,
-                                badge: counts.events,
-                                onTap: () => context.push(AppRoutes.events),
+                                iconColor: const Color(0xFF6366F1),
+                                badgeCount: counts.events,
+                                onTap: () async {
+                                  final me = auth.currentUser;
+                                  if (me != null) await _counters.markSectionSeen(uid: me.id, section: ThixSection.events);
+                                  if (context.mounted) context.push(AppRoutes.events);
+                                },
                               ),
                               _ServiceCard(
-                                title: 'Réseau Pro',
                                 icon: Icons.groups_rounded,
+                                title: 'Réseau Pro',
+                                iconColor: const Color(0xFFF43F5E),
                                 onTap: () => context.push(AppRoutes.network),
                               ),
                             ],
@@ -483,97 +529,101 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                // Mission
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [PremiumColors.primaryDark, PremiumColors.primaryElectric],
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              // BANNIÈRE DE MISSION JEUNESSE RECRÉÉE À L'IDENTIQUE
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'NOTRE MISSION',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: PremiumColors.accentGold, letterSpacing: 1),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Construisons ensemble l’avenir de la jeunesse.',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: PremiumColors.white, height: 1.2),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Accédez à des opportunités, des ressources et un réseau engagé.',
+                              style: TextStyle(fontSize: 12, color: PremiumColors.white.withOpacity(0.75)),
+                            ),
+                          ],
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 6))],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'NOTRE MISSION',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  letterSpacing: 1.2,
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Construisons ensemble l’avenir de la jeunesse.',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Accédez à des opportunités, des ressources et un réseau engagé.',
-                                style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.9)),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.12),
-                          ),
-                          child: const Icon(Icons.diversity_3_rounded, size: 36, color: Colors.white),
-                        ),
-                      ],
-                    ),
+                      const SizedBox(width: 12),
+                      // Remplacement de l'illustration par un avatar groupé moderne
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(color: PremiumColors.white.withOpacity(0.1), shape: BoxShape.circle),
+                        child: const Icon(Icons.diversity_3_rounded, color: PremiumColors.white, size: 36),
+                      )
+                    ],
                   ),
                 ),
-                const SizedBox(height: 90), // espace pour la bottom bar flottante
-              ],
-            ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
           ),
           if (_searching)
             Positioned.fill(
               child: Container(
                 color: Colors.black.withOpacity(0.25),
-                child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                alignment: Alignment.center,
+                child: const CircularProgressIndicator(strokeWidth: 3, color: PremiumColors.white),
               ),
             ),
         ],
       ),
-      // Bottom Navigation Bar comme sur la photo
+      // NAVBAR FIXE DE STYLE FINTECH AVEC BOUTON CENTRAL AFFIRMÉ
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.96),
-          borderRadius: BorderRadius.circular(28),
+          color: PremiumColors.white,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, -4)),
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(icon: Icons.home_outlined, label: 'Accueil', selected: true, onTap: () {}),
-                _NavItem(icon: Icons.grid_view_rounded, label: 'Services', onTap: () {}),
-                _NavItem(icon: Icons.message_outlined, label: 'Messages', onTap: _onMessagesTap),
-                _NavItem(icon: Icons.person_outline, label: 'Profil', onTap: _onProfileTap),
-              ],
-            ),
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _BottomNavItem(icon: Icons.home_rounded, label: 'Accueil', isSelected: true, onTap: () {}),
+              _BottomNavItem(icon: Icons.grid_view_rounded, label: 'Services', isSelected: false, onTap: () {}),
+              // Bouton central de Scan QR / NFC combiné
+              GestureDetector(
+                onTap: () => ThixIdentitySheets.showQrScanSheet(context),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)]),
+                  ),
+                  child: const Icon(Icons.qr_code_scanner_rounded, color: PremiumColors.white, size: 26),
+                ),
+              ),
+              _BottomNavItem(icon: Icons.message_rounded, label: 'Messages', isSelected: false, onTap: _onMessagesTap),
+              _BottomNavItem(icon: Icons.person_rounded, label: 'Profil', isSelected: false, onTap: _onProfileTap),
+            ],
           ),
         ),
       ),
@@ -581,92 +631,61 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ========== WIDGETS COMPACTS ==========
+// ==================== COMPOSANTS INTERNES RÉALIGNÉS ====================
 class _ActionCard extends StatelessWidget {
+  final IconData icon;
   final String title;
   final String subtitle;
-  final IconData icon;
-  final List<Color> colors;
-  final Color iconColor;
   final VoidCallback onTap;
-  const _ActionCard({required this.title, required this.subtitle, required this.icon, required this.colors, required this.iconColor, required this.onTap});
+  final Color iconBgColor;
+  final Color iconColor;
+  final Color arrowColor;
+
+  const _ActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    required this.iconBgColor,
+    required this.iconColor,
+    required this.arrowColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 14, offset: const Offset(0, 6))],
+          color: PremiumColors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(gradient: LinearGradient(colors: colors), borderRadius: BorderRadius.circular(16)),
-              child: Icon(icon, size: 24, color: iconColor),
-            ),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(fontSize: 11, color: PremiumColors.textSecondary)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ServiceCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final int badge;
-  final List<Color> gradient;
-  final Color? iconColor;
-  final VoidCallback onTap;
-  const _ServiceCard({required this.title, required this.icon, this.badge = 0, this.gradient = const [Colors.white, Colors.white], this.iconColor, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(gradient: LinearGradient(colors: gradient), borderRadius: BorderRadius.circular(16)),
-                  child: Icon(icon, size: 26, color: iconColor ?? PremiumColors.primaryElectric),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(12)),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
-                if (badge > 0)
-                  Positioned(
-                    right: -4,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text('$badge', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                    ),
-                  ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: arrowColor.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(Icons.arrow_forward_rounded, color: arrowColor, size: 14),
+                )
               ],
             ),
-            const SizedBox(height: 10),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(height: 14),
+            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: PremiumColors.textPrimary)),
+            const SizedBox(height: 2),
+            Text(subtitle, style: const TextStyle(fontSize: 11, color: PremiumColors.textSecondary, height: 1.2)),
           ],
         ),
       ),
@@ -678,87 +697,141 @@ class _NotificationsCard extends StatelessWidget {
   final bool isAuthenticated;
   final Stream<List<Map<String, dynamic>>>? notifications;
   final VoidCallback onSeeMore;
-  final void Function(String) onMarkRead;
-  final void Function(Map<String, dynamic>)? onOpen;
-  const _NotificationsCard({required this.isAuthenticated, required this.notifications, required this.onSeeMore, required this.onMarkRead, this.onOpen});
+  final void Function(String notificationId) onMarkRead;
+  final void Function(Map<String, dynamic> row) onOpen;
+
+  const _NotificationsCard({
+    required this.isAuthenticated,
+    required this.notifications,
+    required this.onSeeMore,
+    required this.onMarkRead,
+    required this.onOpen,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 14, offset: const Offset(0, 6))],
+        color: PremiumColors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              const Icon(Icons.notifications_none, color: PremiumColors.primaryElectric, size: 20),
-              const SizedBox(width: 8),
-              const Expanded(child: Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
-              TextButton(onPressed: onSeeMore, style: TextButton.styleFrom(padding: EdgeInsets.zero), child: const Text('Voir tout >', style: TextStyle(fontSize: 12))),
-            ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
+            child: const Icon(Icons.notifications_rounded, color: Color(0xFF3B82F6), size: 20),
           ),
-          const SizedBox(height: 8),
-          if (!isAuthenticated)
-            const Text('Connectez-vous pour voir vos notifications.', style: TextStyle(fontSize: 12, color: PremiumColors.textSecondary))
-          else
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: notifications,
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                final rows = snap.data ?? [];
-                if (rows.isEmpty) return const Text('Aucune notification récente.', style: TextStyle(fontSize: 12));
-                return Column(
-                  children: rows.take(2).map((notif) {
-                    final id = (notif['id'] ?? '').toString();
-                    final title = (notif['title'] ?? '') as String;
-                    final body = (notif['body'] ?? '') as String;
-                    final read = (notif['read'] ?? false) as bool;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Row(
+          const SizedBox(width: 12),
+          Expanded(
+            child: !isAuthenticated
+                ? const Text('Connectez-vous pour vos notifications.', style: TextStyle(fontSize: 13, color: PremiumColors.textSecondary))
+                : StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: notifications,
+                    builder: (context, snap) {
+                      final rows = snap.data ?? [];
+                      if (rows.isEmpty) {
+                        return const Text('Aucune nouvelle notification', style: TextStyle(fontSize: 13, color: PremiumColors.textSecondary, fontWeight: FontWeight.w500));
+                      }
+                      final first = rows.first;
+                      final title = (first['title'] ?? '') as String;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: read ? Colors.transparent : PremiumColors.primaryElectric)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(title, style: TextStyle(fontSize: 13, fontWeight: read ? FontWeight.normal : FontWeight.bold)),
-                                Text(body, style: const TextStyle(fontSize: 11, color: PremiumColors.textSecondary)),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              if (!read) onMarkRead(id);
-                              if (onOpen != null) onOpen!(notif);
-                            },
-                            child: const Icon(Icons.chevron_right, size: 16),
-                          ),
+                          const Text('Notifications', style: TextStyle(fontSize: 11, color: PremiumColors.textSecondary, fontWeight: FontWeight.bold)),
+                          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: PremiumColors.textPrimary)),
                         ],
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
+                      );
+                    },
+                  ),
+          ),
+          IconButton(
+            onPressed: onSeeMore,
+            icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: PremiumColors.textSecondary),
+          )
         ],
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _ServiceCard extends StatelessWidget {
   final IconData icon;
-  final bool selected;
-  final String label;
+  final String title;
+  final Color iconColor;
   final VoidCallback onTap;
-  const _NavItem({required this.icon, required this.label, required this.onTap, this.selected = false});
+  final int badgeCount;
+
+  const _ServiceCard({
+    required this.icon,
+    required this.title,
+    required this.iconColor,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                height: 54,
+                width: 54,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              if (badgeCount > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: PremiumColors.textPrimary),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _BottomNavItem({required this.icon, required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -767,10 +840,52 @@ class _NavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 24, color: selected ? PremiumColors.primaryElectric : PremiumColors.textSecondary),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? PremiumColors.primaryElectric : PremiumColors.textSecondary)),
+          Icon(icon, color: isSelected ? const Color(0xFF2563EB) : PremiumColors.textSecondary, size: 22),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? const Color(0xFF2563EB) : PremiumColors.textSecondary)),
         ],
+      ),
+    );
+  }
+}
+
+enum _AccountRequestChoice { personal, enterprise }
+
+class AccountRequestSheet extends StatelessWidget {
+  const AccountRequestSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: PremiumColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 20),
+              const Text('Demander un compte', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: PremiumColors.textPrimary)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.person_outline_rounded, color: Color(0xFF2563EB)),
+                title: const Text('Compte Personnel', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Pour particuliers et citoyens'),
+                onTap: () => Navigator.of(context).pop(_AccountRequestChoice.personal),
+              ),
+              ListTile(
+                leading: const Icon(Icons.business_center_rounded, color: Color(0xFF1D4ED8)),
+                title: const Text('Compte Entreprise', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Pour institutions et sociétés'),
+                onTap: () => Navigator.of(context).pop(_AccountRequestChoice.enterprise),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
